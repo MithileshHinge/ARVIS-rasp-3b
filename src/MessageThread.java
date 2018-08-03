@@ -56,6 +56,7 @@ public class MessageThread extends Thread{
 				case BYTE_START_LIVEFEED:
 					System.out.println("@@@@@@@@@@@@@@@@@Live Feed on kela..........................");
 					//SendingFrame sendingFrame = new SendingFrame();
+					Main.sendingFrame = new SendingFrame();
 					Main.sendingFrame.start();
 					break;
 					/*case BYTE_START_LISTEN:

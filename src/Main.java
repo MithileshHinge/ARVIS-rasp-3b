@@ -46,7 +46,7 @@ public class Main {
 	private static boolean faceNotCovered = false;
 	
 	//public static final String outputFilename = "//home//pi//Desktop//videos//";
-	public static final String outputFilename = "//Users//mithileshhinge//Desktop//videos//";
+	public static final String outputFilename = "//home//odroid//Desktop//videos//";
 	public static IMediaWriter writer;
 	public static boolean startStoring = true;
 	public static long startTime;
@@ -60,7 +60,7 @@ public class Main {
 	public static int myNotifId = 1;
 	
 	//public static final String outputFilename4android = "//home//pi//Desktop//videos4android//";
-	public static final String outputFilename4android = "//Users//mithileshhinge//Desktop//videos4android//";
+	public static final String outputFilename4android = "//home//odroid//Desktop//videos4android//";
 	public static final byte BYTE_FACEFOUND_VDOGENERATING = 1, BYTE_FACEFOUND_VDOGENERATED = 2, BYTE_ALERT1 = 3, BYTE_ALERT2 = 4 , BYTE_ABRUPT_END = 5, BYTE_LIGHT_CHANGE = 6;
 	public static IMediaWriter writer4android;
 	public static boolean writer_close4android = false;
@@ -84,14 +84,14 @@ public class Main {
 	private volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
-	public static String servername = "52.66.53.110";
+	public static String servername = "192.168.1.101";
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
 	
 	public static void main(String[] args) {
 		
-		sendingFrame = new SendingFrame();
+		//sendingFrame = new SendingFrame();
 		//sendingFrame.start();
 		
 		//SendingAudio audio = new SendingAudio();
@@ -120,14 +120,14 @@ public class Main {
 		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
 		
 		//frontal_face_cascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
-		frontal_face_cascade = new CascadeClassifier("//Users//mithileshhinge//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
+		frontal_face_cascade = new CascadeClassifier("//home//odroid//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
 		if (frontal_face_cascade.empty()) {
 			System.out.println("--(!)Error loading Front Face Cascade\n");
 			return;
 		} else System.out.println("Front Face classifier loaded");
 		
 		//mouthCascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//Mouth.xml");
-		mouthCascade = new CascadeClassifier("//Users//mithileshhinge//Desktop//haarcascades//Mouth.xml");
+		mouthCascade = new CascadeClassifier("//home//odroid//Desktop//haarcascades//Mouth.xml");
 		if(mouthCascade.empty()){
 			System.out.println("--(!)Error loading Mouth Cascade\n");
 			return;
@@ -150,9 +150,7 @@ public class Main {
 			}
 			
 			//Send frame via live-feed
-			Mat camImage2 = new Mat();
-			Imgproc.pyrDown(camImage, camImage2);
-			BufferedImage cam_img = matToBufferedImage(camImage2);
+			BufferedImage cam_img = matToBufferedImage(camImage);
 			BufferedImage camimg = timestampIt(cam_img);
 			sendingFrame.frame = camimg;
 			
