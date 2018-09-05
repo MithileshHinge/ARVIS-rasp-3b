@@ -84,12 +84,19 @@ public class Main {
 	private volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
-	public static String servername = "192.168.1.101";
+	public static final String servername = "192.168.1.101";
+	public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
+	public static String username, password;
+	
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
 	
 	public static void main(String[] args) {
+		
+		
+		ConnectThread connThread = new ConnectThread();
+		connThread.start();
 		
 		//sendingFrame = new SendingFrame();
 		//sendingFrame.start();
@@ -106,8 +113,9 @@ public class Main {
 		//SendMail t3 = new SendMail();
 		//t3.start();
 		
-		MessageThread msg = new MessageThread();
-		msg.start();
+		
+		
+		
 		
 		AudioPlaying audioPlaying = new AudioPlaying();
 		
@@ -228,18 +236,18 @@ public class Main {
 				//If writer4android is open, write frame to android video also
 				if (writer4android != null){
 					if(writer4android.isOpen()){
-					if (timeAndroidVdoStarted!=-1 && (System.currentTimeMillis()-timeAndroidVdoStarted)/1000 >= 3){
-						//writer4android.release();
-						writer4android.close();
-						notifId2filepaths.put(new Integer(myNotifId), store_name4android);
-						notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
-						notifThread.myNotifId = myNotifId;
-						notifThread.sendNotif = true;
-						myNotifId++;
-					}else {
-						//writer4android.write(camImage);
-						writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
-					}
+						if (timeAndroidVdoStarted!=-1 && (System.currentTimeMillis()-timeAndroidVdoStarted)/1000 >= 3){
+							//writer4android.release();
+							writer4android.close();
+							notifId2filepaths.put(new Integer(myNotifId), store_name4android);
+							notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
+							notifThread.myNotifId = myNotifId;
+							notifThread.sendNotif = true;
+							myNotifId++;
+						}else {
+							//writer4android.write(camImage);
+							writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
+						}
 					}
 				}
 				frame_no++;
