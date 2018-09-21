@@ -129,7 +129,7 @@ public class NotificationThread extends Thread {
 
 	static int port_note = 6667;
 	static int port_frame = 6669;
-	private static String servername = Main.servername;
+	public static String servername = Main.servername;
 	static Socket socket_note, socket_frame;
 	static OutputStream out_note, out_frame;
 	public InputStream in_note;
@@ -155,7 +155,7 @@ public class NotificationThread extends Thread {
 						System.out.println("........................still sending p.........................."+ p);
 						if (p == Main.BYTE_FACEFOUND_VDOGENERATING || p == Main.BYTE_ALERT1) {
 							System.out.println("1st notif sent..........................");
-						
+							//Thread.sleep(1000);
 							socket_frame = new Socket(servername,port_frame);
 							out_frame = socket_frame.getOutputStream();
 							ImageIO.write(notifFrame, "jpg", out_frame);
@@ -165,6 +165,7 @@ public class NotificationThread extends Thread {
 							DataOutputStream dout_activity = new DataOutputStream(out_note);
 							dout_activity.writeUTF(Main.store_activityname);
 							dout_activity.flush();
+							Main.sendingVideo.start();
 							System.out.println("2nd vdo generated notif sent.......................");
 						}
 						DataOutputStream dout_note = new DataOutputStream(out_note);
@@ -185,7 +186,11 @@ public class NotificationThread extends Thread {
 					System.out.println(String.format("connection_prob2"));
 					e.printStackTrace();
 					continue;
-				}
+				} /*catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					System.out.println("...notif thread.sleep error!..");
+					e.printStackTrace();
+				}*/
 			} else {
 				try {
 					Thread.sleep(0, 10000);

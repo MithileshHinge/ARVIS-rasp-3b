@@ -22,10 +22,11 @@ public class SendingVideo extends Thread {
 	private int beginIndex = Main.outputFilename4android.length();
 	
 	private ConcurrentHashMap<Integer, String> notifId2filepaths;
+	private FileInputStream fileInputStream;
 	
 	public SendingVideo(ConcurrentHashMap<Integer, String> notifId2filepaths){
 		this.notifId2filepaths = notifId2filepaths;
-		try {
+		/*try {
 			InetSocketAddress listenAddr = new InetSocketAddress(port);
 			listener = SocketChannel.open();
 			Socket ssVdo = listener.socket();
@@ -33,16 +34,18 @@ public class SendingVideo extends Thread {
 			ssVdo.bind(listenAddr);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 	
 	@Override
 	public void run() {
 		while(true){
 			try {
-				listener.connect(new InetSocketAddress(Main.servername, port));
+				/*listener.connect(new InetSocketAddress(Main.servername, port));
 				SocketChannel sc = listener;
-				Socket s = sc.socket();
+				Socket s = sc.socket();*/
+				Socket s = new Socket(Main.servername,port);
+				SocketChannel sc = s.getChannel();
 				InputStream sIn = s.getInputStream();
 				DataInputStream dIn = new DataInputStream(sIn);
 				OutputStream sOut = s.getOutputStream();
@@ -71,13 +74,12 @@ public class SendingVideo extends Thread {
 	private void sendVideo(SocketChannel sc, String filepath){
 		
 		try {
-			FileChannel fc = new FileInputStream(filepath).getChannel();
+			fileInputStream = new FileInputStream(filepath);
+			FileChannel fc = fileInputStream.getChannel();
 			fc.transferTo(0, fc.size(), sc);
+			fc.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		
-		
+		}	
 	}
-
 }
