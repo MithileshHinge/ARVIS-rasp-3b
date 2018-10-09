@@ -32,6 +32,8 @@ public class ConnectThread extends Thread{
 				
 				while(true){
 					in.read();
+					out.write(1);
+					out.flush();
 				}
 
 			} catch (IOException e) {
