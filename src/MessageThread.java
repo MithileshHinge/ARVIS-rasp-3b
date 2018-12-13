@@ -10,17 +10,27 @@ public class MessageThread extends Thread{
 	private Socket socket;
 	private String servername=Main.servername ;
 	//final byte BYTE_STOP_LIVEFEED = 4, BYTE_START_LISTEN = 5, BYTE_STOP_LISTEN = 6,BYTE_PLAY_ALARM=7, BYTE_STOP_ALARM=8;
-	final byte BYTE_SURV_MODE_ON = 1, BYTE_SURV_MODE_OFF = 3, BYTE_EMAIL_NOTIF_ON = 9, BYTE_EMAIL_NOTIF_OFF = 10,BYTE_PLAY_ALARM=7, BYTE_STOP_ALARM=8,BYTE_STOP_LIVEFEED = 4, BYTE_START_LIVEFEED=2;
-
-	//private static DatagramSocket dataSocket;
-
+	final byte BYTE_SURV_MODE_ON = 1,
+			BYTE_SURV_MODE_OFF = 3, 
+			BYTE_EMAIL_NOTIF_ON = 9, 
+			BYTE_EMAIL_NOTIF_OFF = 10,
+			BYTE_PLAY_ALARM=7, 
+			BYTE_STOP_ALARM=8,
+			//BYTE_STOP_LIVEFEED = 4, 
+			BYTE_START_LIVEFEED=2, 
+			BYTE_RESTART=11,
+			BYTE_START_AUDIO = 13,
+			BYTE_START_VIDEO_DOWNLOAD = 14;
+		
+	volatile boolean end = false;
+	
 	public MessageThread(){	}
 
 	public void run(){
-		while(true){
+		while(!end){
 			try{
 				socket = new Socket(servername,port);
-
+				System.out.println("Message thread started!!!!!!");
 				int p = socket.getInputStream().read();
 				AudioPlaying audioPlaying1 = new AudioPlaying();
 
@@ -78,10 +88,28 @@ public class MessageThread extends Thread{
 					AudioPlaying.clip.stop();
 					AudioPlaying.clip.close();
 					break;
+				case BYTE_RESTART:
+					System.out.println("######### Program restart");
+					
+					break;
+					
+				case BYTE_START_AUDIO :
+					System.out.println("################ Sending Audio ");
+					Main.sendingAudio = new SendingAudio();
+					Main.sendingAudio.start();
+					break;
+					
+				case BYTE_START_VIDEO_DOWNLOAD :
+					System.out.println("################ Video Download request ");
+					Main.sendingVideo = new SendingVideo();
+					Main.sendingVideo.start();
+					break;
+					
 				}
 
 				socket.getOutputStream().write(1);
 				socket.getOutputStream().flush();
+				System.out.println("###################   Message thread acknowledgment sent to server");
 
 				socket.close();
 			}catch (IOException e){
@@ -89,5 +117,9 @@ public class MessageThread extends Thread{
 				continue;
 			}
 		}
+	}
+	
+	public void end(){
+		this.end = true;
 	}
 }

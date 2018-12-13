@@ -5,8 +5,8 @@ import java.net.*;
 import javax.imageio.ImageIO;
 
 public class SendingFrame extends Thread {
-    private static int udpPort = 6663;
-    private static int port = 6666;
+    private static int PORT_LIVEFEED_UDP = 6663;
+    private static int PORT_LIVEFEED_TCP = 6666;
     private static ServerSocket serverSocket;
     private static DatagramSocket udpSocket;
     private static Socket socket;
@@ -15,9 +15,10 @@ public class SendingFrame extends Thread {
     private static OutputStream out;
 
     public void run() {
-		
+    	
+		System.out.println("!!!!!!!!!!! LIVEFEED STARTED  !!!!!!!!!!");
         try {
-        	socket = new Socket(servername,port);
+        	socket = new Socket(servername,PORT_LIVEFEED_TCP);
             udpSocket = new DatagramSocket();
         } catch (IOException e1) {
             e1.printStackTrace();
@@ -36,7 +37,7 @@ public class SendingFrame extends Thread {
 	            byte[] buf = baos.toByteArray();
 	            
 	            InetAddress serverAddress = InetAddress.getByName(servername);
-	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, serverAddress, udpPort);
+	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, serverAddress, PORT_LIVEFEED_UDP);
 	            udpSocket.send(imgPacket);
 
         	} catch (IOException e) {
@@ -46,7 +47,7 @@ public class SendingFrame extends Thread {
 
 
         	long time2 = System.currentTimeMillis();
-        	System.out.println("sendingframe time = " + (time2 - time1));
+        	//System.out.println("sendingframe time = " + (time2 - time1));
         }
     }
 }

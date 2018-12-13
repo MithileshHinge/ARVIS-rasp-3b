@@ -20,14 +20,14 @@ public class AudioPlaying extends Thread{
 	public void run() {
 		try {
 			//filePath="//home//pi//Desktop//warning.wav";
-			filePath="C://Users//Home//Desktop//warning.wav";
+			filePath="C:\\Users\\Sibhali\\Desktop\\Audio\\warning.wav";
 			if(play_alarm){
 				//filePath = "//home//pi//Desktop//siren.wav";
-				filePath = "C://Users//Home//Desktop//siren.wav";
+				filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\siren.wav";
 			}
 			if(system_ready){
 				//filePath = "//home//pi//Desktop//System_ready.wav";
-				filePath = "C://Users//Home//Desktop//System_ready.wav";
+				filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\System_ready.wav";
 				system_ready=false;
 			}
 			 audioInputStream = 

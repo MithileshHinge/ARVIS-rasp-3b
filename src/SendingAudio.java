@@ -1,6 +1,7 @@
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,10 +28,10 @@ public class SendingAudio extends Thread{
 	static AudioInputStream ais;
 	static AudioFormat format;
 	
-	static int audioport = 6671;
+	//static int PORT_AUDIO_UDP = 6671;
 	static int sampleRate = 44100;                //44100;
 
-	static int port = 6670;
+	static int PORT_AUDIO_TCP = 6670;
 	private static String servername = Main.servername ;
 	static Socket socket;
 	static OutputStream out;
@@ -44,8 +45,10 @@ public class SendingAudio extends Thread{
 	public void run(){
 		System.out.println(String.format("Receiving Audio started"));
 		try {
-            dataSocket = new DatagramSocket(audioport);
-            dataSocket.setSoTimeout(500);
+			socket = new Socket(servername,PORT_AUDIO_TCP);
+			//dataSocket = new DatagramSocket(PORT_AUDIO_UDP);
+			dataSocket = new DatagramSocket();
+			dataSocket.setSoTimeout(500);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -53,22 +56,31 @@ public class SendingAudio extends Thread{
 		while (true) {
 			try {
 				System.out.println("................next iteration");
-				socket = new Socket(servername,port);
-				System.out.println(String.format("....................................................connection sapadla"));
+				
+				//System.out.println(String.format("....................................................connection sapadla"));
 				out = socket.getOutputStream();
+				out.write(2);
+				out.flush();
+				DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
+				dout.writeInt(dataSocket.getLocalPort());
+				dout.flush();
+				System.out.println("!!!!!!!!!!!!!!!!!!! Local Port  " + dataSocket.getLocalPort());
 				in = socket.getInputStream();
 				int p=in.read();
 				System.out.println("sendingaudio in.read successful!!");
-				
+			
 				if(p==1)
 				{
 					p = 0;
 					System.out.println(String.format(".................p=1 received"));
-					out.write(2);
+					out.write(3);
 				}
 				else{
 					continue;
 				}
+				
+				
+				
 	            byte[] receiveData = new byte[4096];   ///1280
 	            // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)
 
@@ -78,9 +90,11 @@ public class SendingAudio extends Thread{
 	            sourceDataLine.start();
 	            FloatControl volumeControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
 	            volumeControl.setValue(6f);
-	            System.out.println(String.format("here"));
+	            //System.out.println(String.format("here"));
 	            DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
-	            ByteArrayInputStream baiss = new ByteArrayInputStream(receivePacket.getData());
+	            
+	            
+	            //ByteArrayInputStream baiss = new ByteArrayInputStream(receivePacket.getData());
 	            
 	            //final ArrayBlockingQueue<byte[]> audioQueue = new ArrayBlockingQueue<>(200);
 	            
@@ -119,15 +133,15 @@ public class SendingAudio extends Thread{
 	            	try{
 	            		out.write(1);
 	            		out.flush();
-	            		
+	            		System.out.println("....receiving packets.....");
 	            		dataSocket.receive(receivePacket);
-	            		
+	            		System.out.println("....receiving packets for initial buffer.....");
 	            		//if (fin.read(receiveData) == -1) break;
 	            		
 	            		initialBuf.write(receivePacket.getData());
 	            	}catch (IOException e){
 	            		e.printStackTrace();
-	            		break;
+	            		continue;
 	            	}
 	            }
 	            
@@ -135,36 +149,34 @@ public class SendingAudio extends Thread{
 	            
 	            initialBuf.close();
 	            while (true) {
-			            System.out.println(String.format("...........................................................here"));
-			            try{
-		            	out.write(1);
-		                out.flush();
-		                
-		                //if(fin.read(receiveData) == -1) break;
-		                
-			            dataSocket.receive(receivePacket);
-			            
-			            /*try {
-							//audioQueue.put(receivePacket.getData());
-			            	audioQueue.put(receiveData);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}*/
-		                
-		                
-		                toSpeaker(receiveData);
-			            
-			            System.out.println(String.format(".....here....................................................."));
-		                
-		                //toSpeaker(receivePacket.getData());
-		                //System.out.println(String.format("..............................................here......"));
-		                
-			            }catch (SocketTimeoutException s) {
-			                System.out.println("Socket timed out!");
-			            }catch (IOException e){
-			            	System.out.println("............Audio sending closed");
-			            	break;
-			            }
+		            System.out.println(String.format("......................................into audio rx while loop"));
+		            try{
+	            	out.write(1);
+	                out.flush();
+	                
+	                //if(fin.read(receiveData) == -1) break;
+	                
+		            dataSocket.receive(receivePacket);
+		            
+		            /*try {
+						//audioQueue.put(receivePacket.getData());
+		            	audioQueue.put(receiveData);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}*/
+	                
+	                //toSpeaker(receiveData);
+		            
+		            toSpeaker(receivePacket.getData());			            
+		            System.out.println(String.format(".....here....................................................."));
+	                
+		            }catch (SocketTimeoutException s) {
+		                System.out.println("Socket timed out!");
+		                break;
+		            }catch (IOException e){
+		            	System.out.println("............Audio sending closed");
+		            	break;
+		            }
 	            }
 	            
 	            //fin.close();
@@ -176,6 +188,7 @@ public class SendingAudio extends Thread{
 			     catch (IOException e) {
 					System.out.println(String.format("connection_prob2"));					
 					e.printStackTrace();
+					break;
 			     } catch (LineUnavailableException e) {
 					e.printStackTrace();
 				}

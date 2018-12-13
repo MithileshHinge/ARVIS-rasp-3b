@@ -6,13 +6,18 @@ import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.JFrame;
+
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
@@ -31,13 +36,13 @@ import com.xuggle.xuggler.ICodec;
 
 public class Main {
 
-	static boolean LightChange = false;
-    static int h;
-    static int w;
-    static int grid_bc = 0;
-    static int blk_grid = 0;
-    static int grid_length = 0;
-    static int itr = 0;
+	//static boolean LightChange = false;
+    //static int h;
+    //static int w;
+    //static int grid_bc = 0;
+    //static int blk_grid = 0;
+    //static int grid_length = 0;
+    //static int itr = 0;
 	
 	private static CascadeClassifier frontal_face_cascade;
 	private static CascadeClassifier mouthCascade;
@@ -46,7 +51,7 @@ public class Main {
 	private static boolean faceNotCovered = false;
 	
 	//public static final String outputFilename = "//home//pi//Desktop//videos//";
-	public static final String outputFilename = "//home//odroid//Desktop//videos//";
+	public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
 	public static IMediaWriter writer;
 	public static boolean startStoring = true;
 	public static long startTime;
@@ -60,7 +65,7 @@ public class Main {
 	public static int myNotifId = 1;
 	
 	//public static final String outputFilename4android = "//home//pi//Desktop//videos4android//";
-	public static final String outputFilename4android = "//home//odroid//Desktop//videos4android//";
+	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";
 	public static final byte BYTE_FACEFOUND_VDOGENERATING = 1, BYTE_FACEFOUND_VDOGENERATED = 2, BYTE_ALERT1 = 3, BYTE_ALERT2 = 4 , BYTE_ABRUPT_END = 5, BYTE_LIGHT_CHANGE = 6;
 	public static IMediaWriter writer4android;
 	public static boolean writer_close4android = false;
@@ -81,22 +86,155 @@ public class Main {
 	
 	public static boolean Surv_Mode=true;
 	public static String fourcc = "MP4V";
-	private volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
+	public volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
+	public static SendingAudio sendingAudio;
 	public static final String servername = "192.168.1.101";
-	public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
+	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
+	public static final String HASH_ID = "hh";
 	public static String username, password;
+	public static NotificationThread notifThread;
+	public static SendingVideo sendingVideo;
+	
+	public static int contoursCheck = 0;
 	
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
 	
 	public static void main(String[] args) {
+		startProgram();
 		
+	}
+	
+	public static MatOfRect detect(Mat inputframe) {
+		faceNotCovered=false;
+		Mat mRgba = new Mat();
+		Mat mGrey = new Mat();
+		MatOfRect front_faces = new MatOfRect();
+		// MatOfRect side_faces = new MatOfRect();
+		inputframe.copyTo(mRgba);
+		inputframe.copyTo(mGrey);
+		Imgproc.cvtColor(mRgba, mGrey, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.equalizeHist(mGrey, mGrey);
+		frontal_face_cascade.detectMultiScale(mGrey, front_faces, 1.1, 3, 0, new Size(30, 30), new Size());
+
+		
+		Rect[] facesArray = front_faces.toArray();
+
+    	for (int i = 0; i < facesArray.length; i++) {
+    	    Point centre1 = new Point(facesArray[i].x + facesArray[i].width * 0.5,facesArray[i].y + facesArray[i].height * 0.5);
+    	    //Core.ellipse(mRgba, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
+    	    //Core.ellipse(front_faces, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
+    	    Mat faceROI = mGrey.submat(facesArray[i]);
+    	    MatOfRect mouth = new MatOfRect();
+
+    	    //mouthCascade.detectMultiScale(faceROI, mouth, 1.1, 2, 0, new Size(30, 30), new Size());
+    	    mouthCascade.detectMultiScale(faceROI, mouth);
+    	    Rect[] mouthArray = mouth.toArray();
+
+    	    for (int k = 0 ; k < mouthArray.length; k++) {
+    	        Point centre3 = new Point(facesArray[i].x + mouthArray[k].x + mouthArray[k].width * 0.5,
+    	                facesArray[i].y + mouthArray[k].y + mouthArray[k].height * 0.5);
+    	        if (centre3.y > centre1.y ){
+    	        	faceNotCovered=true;
+    	        //Core.ellipse(mRgba, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
+    	        //Core.ellipse(front_faces, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
+    	        //System.out.println(String.format("Detected %s Mouth(s)", mouth.toArray().length));
+    	        }
+    	    }
+    	    if(faceNotCovered){
+    	    	System.out.println(String.format("Detected %s face(s)", front_faces.toArray().length));
+    	    	//FacenotCovered=false;
+    	    }else{
+    	    	System.out.println(String.format("Detected people = 0"));
+    	    	//break;                                                                    ///add break for multiple faces or else no need	
+    	    }
+    	}
+    	return front_faces;
+    	//return mRgba;
+	}
+	
+	private static BufferedImage matToBufferedImage(Mat frame) {
+		int type = 0;
+		if (frame.channels() == 1) {
+			type = BufferedImage.TYPE_BYTE_GRAY;
+		} else if (frame.channels() == 3) {
+			type = BufferedImage.TYPE_3BYTE_BGR;
+		}
+		BufferedImage image = new BufferedImage(frame.width(), frame.height(), type);
+		WritableRaster raster = image.getRaster();
+		DataBufferByte dataBuffer = (DataBufferByte) raster.getDataBuffer();
+		byte[] data = dataBuffer.getData();
+		frame.get(0, 0, data);
+		return image;
+		
+	}
+	private static BufferedImage timestampIt(BufferedImage toEdit){
+		BufferedImage dest = new BufferedImage(toEdit.getWidth(), toEdit.getHeight(),  BufferedImage.TYPE_3BYTE_BGR);
+		
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	    String dateTime = sdf.format(Calendar.getInstance().getTime()); // reading local time in the system
+	    
+	    Graphics2D g2 = dest.createGraphics();
+	    //Color darkgreen= new Color(28,89,71);
+	    Color darkgreen= new Color(0,0,0);
+	    g2.drawImage(toEdit, 0, 0, toEdit.getWidth(), toEdit.getHeight(), null);
+	    g2.setColor(darkgreen);
+	    g2.setFont(new Font("TimesRoman", Font.PLAIN, 25)); 
+	    g2.drawString(dateTime, 350, 450);
+	    return dest;
+	}
+	
+	private static int CalcContours(Mat frame){
+		//Mat imageBlurr = new Mat();
+		//Imgproc.GaussianBlur(fgMask, imageBlurr, new Size(3,3), 0);
+		Imgproc.medianBlur(frame, frame, 9);
+		//frame=imageBlurr;
+		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();    
+	    Imgproc.findContours(frame, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+	    //System.out.println("Contours = " + contours.size());
+	    for (int i = 0; i < contours.size(); i++) {
+	    	if(contours.size()<2) break;
+	    	Imgproc.drawContours(frame, contours, 1, new Scalar(0,0,255));
+	    }
+	    return contours.size();
+	}
+	
+	
+	public static void startProgram(){
+		
+		frame_no = 0;
+		detectFace = true;
+		faceNotCovered = false;
+		
+		startStoring = true;
+		writer_close = false;
+		myNotifId = 1;
+		
+		writer_close4android = false;
+		once =false;
+		timeAndroidVdoStarted = -1;
+		j = true;
+		checkonce =true;
+		
+		//Disable auto focus of camera through terminal
+		
+		alert2given = false;
+		alert1given = false;
+		framesRead = 0;
+		
+		Surv_Mode=true;
+		notifId2filepaths = new ConcurrentHashMap<>();
+		give_system_ready_once = true;
+		
+		notifThread = new NotificationThread();
+		//sendingVideo = new SendingVideo();
 		
 		ConnectThread connThread = new ConnectThread();
 		connThread.start();
+		
 		
 		//sendingFrame = new SendingFrame();
 		//sendingFrame.start();
@@ -107,19 +245,15 @@ public class Main {
 		//SendingVideo sendingVideo = new SendingVideo(notifId2filepaths);
 		//sendingVideo.start();
 		
-		NotificationThread notifThread = new NotificationThread();
+		
 		//notifThread.start();
 		
 		//SendMail t3 = new SendMail();
 		//t3.start();
 		
-		
-		
-		
-		
 		AudioPlaying audioPlaying = new AudioPlaying();
 		
-		VideoCapture capture = new VideoCapture(0);
+		VideoCapture capture = new VideoCapture(1);
 		if (!capture.isOpened()) {
 			System.out.println("Error - cannot open camera!");
 			return;
@@ -127,15 +261,16 @@ public class Main {
 		
 		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
 		
+		
 		//frontal_face_cascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
-		frontal_face_cascade = new CascadeClassifier("//home//odroid//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
+		frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
 		if (frontal_face_cascade.empty()) {
 			System.out.println("--(!)Error loading Front Face Cascade\n");
 			return;
 		} else System.out.println("Front Face classifier loaded");
 		
 		//mouthCascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//Mouth.xml");
-		mouthCascade = new CascadeClassifier("//home//odroid//Desktop//haarcascades//Mouth.xml");
+		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");
 		if(mouthCascade.empty()){
 			System.out.println("--(!)Error loading Mouth Cascade\n");
 			return;
@@ -146,6 +281,17 @@ public class Main {
 		int faceDetectionsCounter = 0;
 		boolean noFaceAlert = true;
 		
+		String window_name = "Cam Image";  
+		JFrame frame = new JFrame(window_name);  
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+		frame.setSize(400,400); 
+		//frame.setVisible(true);
+		//System.out.println("Jframe 2 created");
+
+		My_Panel my_panel = new My_Panel();
+
+		frame.setContentPane(my_panel);
+
 
 		while(true){
 			timeNow1 = System.currentTimeMillis();
@@ -156,6 +302,10 @@ public class Main {
 				System.out.println(" --(!) No captured frame -- Break!");
 				continue;
 			}
+			
+			frame.setSize(camImage.width(),camImage.height());
+			my_panel.MatToBufferedImage(camImage);  
+			my_panel.repaint(); 
 			
 			//Send frame via live-feed
 			BufferedImage cam_img = matToBufferedImage(camImage);
@@ -197,9 +347,14 @@ public class Main {
 				}
 			}
 			final int blackCountPercent = 100*blackCount/buff.length;
-			System.out.println("" + (blackCountPercent) + "%");
+			//System.out.println("" + (blackCountPercent) + "%");
 			Mat output = new Mat();
 			camImage.copyTo(output, fgMask);
+			
+			//Get the number of contours
+			int noOfContours = CalcContours(fgMask);
+			//System.out.println("Contours = " + noOfContours + " BlackCountPercentage = " + blackCountPercent + "%");
+			System.out.println(blackCountPercent+"%");
 			
 			//To give system is ready
 			if(framesRead==200 && give_system_ready_once){
@@ -209,7 +364,7 @@ public class Main {
 				audioPlaying.start();
 			}
 			//Consider background change if black % is less that 90
-			if (blackCountPercent < 90 && framesRead > 200) {
+			if (blackCountPercent < 90 && framesRead > 100) {
 				
 				//Start recording video just after bg changes
 				if (startStoring && Surv_Mode){
@@ -306,51 +461,16 @@ public class Main {
 					}
 				}
 				
-				/*if((System.currentTimeMillis()-time3) < 4000 && !LightChange && itr>3 && blackCountPercent < 10)
-				{ 
-					  backgroundSubtractorMOG.apply(camImage, frameRef, 0);
-					  System.out.println("...............Detecting light change started");
-					  int h = frameRef.height();
-					  int w = frameRef.width();
-					  System.out.println("h = "+h+"	w = "+w);
-					  byte[] buffLight = new byte[(int) (frameRef.total() * frameRef.channels())];
-					  frameRef.get(0, 0, buffLight);
-					  
-					  for(int k=0;k<=5;k++){
-						  for(int m=0;m<=7;m++){
-							  for(int n=0;n<1;n++){
-								  for(int i=((k*w*h/6)+(m*w/8)+(n*w));i<((k*w*h/6)+(m*w/8)+(n*w)+1);i++){
-									  System.out.println(".........................");
-									  if (buffLight[i] == 0) {
-										  	System.out.println("&&&&&&&&&&&&&&&&&&");
-											grid_bc++;
-										}
-								  }
-							  }
-						  }  
-					  }	
-					  System.out.println("grid_bc = "+grid_bc);
-					  if(grid_bc<7){
-						  	LightChange = true;
-						  	store_name4android = outputFilename4android + ft.format(dNow) + ".mp4";
-							store_activityname = ft.format(dNow);
-						    notifThread.p=6;
-							notifThread.sendNotif=true;
-							framesRead=0;
-							System.out.println("...............Light Change Confirmed");
-					  }
-					  grid_bc = 0;
-				}
-				itr++;*/
 				
 				//Give alert1 and start writer4android
 				if (noFaceAlert && !alert1given && blackCountPercent<85 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
 					alert1given = true;
 					System.out.println("warn level 1.......................");
-					notifThread.sendNotif = true;
+					
 					notifThread.notifFrame = camimg;
 					notifThread.p = BYTE_ALERT1;
 					notifThread.myNotifId = myNotifId;
+					notifThread.sendNotif = true;
 					System.out.println("alert level 1 value of notifId is " + myNotifId);
 					
 					
@@ -384,13 +504,33 @@ public class Main {
 					System.out.println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
 				}
 				
+				/*//Check for Illumination change
+				//if(notifThread.p == BYTE_FACEFOUND_VDOGENERATING | notifThread.p == BYTE_FACEFOUND_VDOGENERATED){
+					int contoursPerPercentChange = 0;
+					if(blackCountPercent != 0)
+						contoursPerPercentChange = (noOfContours/blackCountPercent)*10;
+					else
+						contoursPerPercentChange = (noOfContours/1)*10;
+					System.out.println("....................................contoursPerPercentChange = "+contoursPerPercentChange);
+					if(contoursPerPercentChange < 6)
+						contoursCheck--;
+					if(contoursPerPercentChange > 5)
+						contoursCheck++;
+					if(contoursCheck>5){
+						contoursCheck = 0;
+						System.out.println(".............LIGHT CHANGE.............");
+						framesRead = 10;
+					}
+			//	}
+			*/
 				
 				
 			}else {
-				
+				contoursCheck = 0;
 				frameRef = camImage;
 				
-				LightChange = false;
+				//LightChange = false;
+				
 				dNow = new Date();
 				startStoring = true;
 				
@@ -437,97 +577,17 @@ public class Main {
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
 			}
 			
-			if (framesRead < 350) {
+			if (framesRead < 110) {
 				framesRead++;
 				System.out.println("frmes_read" + framesRead);
 			}
 			time4 = System.currentTimeMillis();
 			timeNow2 = System.currentTimeMillis();
-			//System.out.println(timeNow2 - timeNow1);
+			System.out.println("                        FPS : " + (timeNow2 - timeNow1));
 			
 			//System.out.println("frmes_read" + framesRead);
 			timeNow1 = timeNow2;
 		}
 	}
-	
-	public static MatOfRect detect(Mat inputframe) {
-		faceNotCovered=false;
-		Mat mRgba = new Mat();
-		Mat mGrey = new Mat();
-		MatOfRect front_faces = new MatOfRect();
-		// MatOfRect side_faces = new MatOfRect();
-		inputframe.copyTo(mRgba);
-		inputframe.copyTo(mGrey);
-		Imgproc.cvtColor(mRgba, mGrey, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.equalizeHist(mGrey, mGrey);
-		frontal_face_cascade.detectMultiScale(mGrey, front_faces, 1.1, 3, 0, new Size(30, 30), new Size());
-
-		
-		Rect[] facesArray = front_faces.toArray();
-
-    	for (int i = 0; i < facesArray.length; i++) {
-    	    Point centre1 = new Point(facesArray[i].x + facesArray[i].width * 0.5,facesArray[i].y + facesArray[i].height * 0.5);
-    	    //Core.ellipse(mRgba, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
-    	    //Core.ellipse(front_faces, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
-    	    Mat faceROI = mGrey.submat(facesArray[i]);
-    	    MatOfRect mouth = new MatOfRect();
-
-    	    //mouthCascade.detectMultiScale(faceROI, mouth, 1.1, 2, 0, new Size(30, 30), new Size());
-    	    mouthCascade.detectMultiScale(faceROI, mouth);
-    	    Rect[] mouthArray = mouth.toArray();
-
-    	    for (int k = 0 ; k < mouthArray.length; k++) {
-    	        Point centre3 = new Point(facesArray[i].x + mouthArray[k].x + mouthArray[k].width * 0.5,
-    	                facesArray[i].y + mouthArray[k].y + mouthArray[k].height * 0.5);
-    	        if (centre3.y > centre1.y ){
-    	        	faceNotCovered=true;
-    	        //Core.ellipse(mRgba, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
-    	        //Core.ellipse(front_faces, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
-    	        //System.out.println(String.format("Detected %s Mouth(s)", mouth.toArray().length));
-    	        }
-    	    }
-    	    if(faceNotCovered){
-    	    	System.out.println(String.format("Detected %s face(s)", front_faces.toArray().length));
-    	    	//FacenotCovered=false;
-    	    }else{
-    	    	System.out.println(String.format("Detected people = 0"));
-    	    	//break;                                                                    ///add break for multiple faces or else no need	
-    	    }
-    	}
-    	return front_faces;
-    	//return mRgba;
-	}
-	
-	private static BufferedImage matToBufferedImage(Mat frame) {
-		int type = 0;
-		if (frame.channels() == 1) {
-			type = BufferedImage.TYPE_BYTE_GRAY;
-		} else if (frame.channels() == 3) {
-			type = BufferedImage.TYPE_3BYTE_BGR;
-		}
-		BufferedImage image = new BufferedImage(frame.width(), frame.height(), type);
-		WritableRaster raster = image.getRaster();
-		DataBufferByte dataBuffer = (DataBufferByte) raster.getDataBuffer();
-		byte[] data = dataBuffer.getData();
-		frame.get(0, 0, data);
-		return image;
-		
-	}
-	private static BufferedImage timestampIt(BufferedImage toEdit){
-		BufferedImage dest = new BufferedImage(toEdit.getWidth(), toEdit.getHeight(),  BufferedImage.TYPE_3BYTE_BGR);
-		
-	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	    String dateTime = sdf.format(Calendar.getInstance().getTime()); // reading local time in the system
-	    
-	    Graphics2D g2 = dest.createGraphics();
-	    //Color darkgreen= new Color(28,89,71);
-	    Color darkgreen= new Color(0,0,0);
-	    g2.drawImage(toEdit, 0, 0, toEdit.getWidth(), toEdit.getHeight(), null);
-	    g2.setColor(darkgreen);
-	    g2.setFont(new Font("TimesRoman", Font.PLAIN, 25)); 
-	    g2.drawString(dateTime, 350, 450);
-	    return dest;
-	}
-	
 
 }
