@@ -11,11 +11,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.JFrame;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
@@ -29,10 +27,6 @@ import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
-
-import com.xuggle.mediatool.IMediaWriter;
-import com.xuggle.mediatool.ToolFactory;
-import com.xuggle.xuggler.ICodec;
 
 public class Main {
 
@@ -50,9 +44,11 @@ public class Main {
 	private static boolean detectFace = true;
 	private static boolean faceNotCovered = false;
 	
-	//public static final String outputFilename = "//home//pi//Desktop//videos//";
-	public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
-	public static IMediaWriter writer;
+	public static final String outputFilename = "//home//pi//arvis//videos//";
+	public static final String outputFilename4android = "//home//pi//arvis//videos4android//";
+	/*public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
+	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";*/
+	public static VideoWriter writer;
 	public static boolean startStoring = true;
 	public static long startTime;
 	public static long startTime4android;
@@ -64,10 +60,16 @@ public class Main {
 	static OutputStream out;
 	public static int myNotifId = 1;
 	
-	//public static final String outputFilename4android = "//home//pi//Desktop//videos4android//";
-	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";
-	public static final byte BYTE_FACEFOUND_VDOGENERATING = 1, BYTE_FACEFOUND_VDOGENERATED = 2, BYTE_ALERT1 = 3, BYTE_ALERT2 = 4 , BYTE_ABRUPT_END = 5, BYTE_LIGHT_CHANGE = 6;
-	public static IMediaWriter writer4android;
+	public static final byte 
+		BYTE_FACEFOUND_VDOGENERATING = 1, 
+		BYTE_FACEFOUND_VDOGENERATED = 2, 
+		BYTE_ALERT1 = 3, 
+		BYTE_ALERT2 = 4, 
+		BYTE_ABRUPT_END = 5, 
+		BYTE_LIGHT_CHANGE = 6,
+		BYTE_CAMERA_INACTIVE = 7;
+	
+	public static VideoWriter writer4android;
 	public static boolean writer_close4android = false;
 	public static String store_name4android;
 	public static String store_activityname;
@@ -85,20 +87,24 @@ public class Main {
 	public static int framesRead = 0;
 	
 	public static boolean Surv_Mode=true;
-	public static String fourcc = "MP4V";
+	//public static String fourcc = "X264";    /linux environ
+	public static String fourcc = "XVID";
 	public volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	public static final String servername = "192.168.1.101";
+	public static final String servername = "192.168.1.104";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "hh";
+	public static final String HASH_ID = "xx";
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
-	
+	public static SendMail sendMail;
+	/*private static int cameraErrorCount = 0;
+	private static int cameraErrorCountThresh = 15;		// check for 5 seconds considering 3 fps
+	*/
 	public static int contoursCheck = 0;
-	
+	public static Mat saveImage;
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
@@ -155,6 +161,13 @@ public class Main {
     	return front_faces;
     	//return mRgba;
 	}
+	
+	public static Mat bufferedImageToMat(BufferedImage bi) {
+		  Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
+		  byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+		  mat.put(0, 0, data);
+		  return mat;
+		}
 	
 	private static BufferedImage matToBufferedImage(Mat frame) {
 		int type = 0;
@@ -248,12 +261,12 @@ public class Main {
 		
 		//notifThread.start();
 		
-		//SendMail t3 = new SendMail();
-		//t3.start();
+		SendMail t3 = new SendMail();
+		t3.start();
 		
 		AudioPlaying audioPlaying = new AudioPlaying();
 		
-		VideoCapture capture = new VideoCapture(1);
+		VideoCapture capture = new VideoCapture(0);
 		if (!capture.isOpened()) {
 			System.out.println("Error - cannot open camera!");
 			return;
@@ -262,15 +275,16 @@ public class Main {
 		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
 		
 		
-		//frontal_face_cascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
-		frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
+		frontal_face_cascade = new CascadeClassifier("//home//pi//arvis//haarcascades//haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier("//home//pi//arvis//haarcascades//Mouth.xml");
+		
+		/*frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");*/
 		if (frontal_face_cascade.empty()) {
 			System.out.println("--(!)Error loading Front Face Cascade\n");
 			return;
 		} else System.out.println("Front Face classifier loaded");
 		
-		//mouthCascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//Mouth.xml");
-		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");
 		if(mouthCascade.empty()){
 			System.out.println("--(!)Error loading Mouth Cascade\n");
 			return;
@@ -280,33 +294,33 @@ public class Main {
 		
 		int faceDetectionsCounter = 0;
 		boolean noFaceAlert = true;
-		
-		String window_name = "Cam Image";  
-		JFrame frame = new JFrame(window_name);  
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
-		frame.setSize(400,400); 
-		//frame.setVisible(true);
-		//System.out.println("Jframe 2 created");
-
-		My_Panel my_panel = new My_Panel();
-
-		frame.setContentPane(my_panel);
-
+		Mat blackFrame = Mat.zeros(480, 640, CvType.CV_8UC1);
 
 		while(true){
 			timeNow1 = System.currentTimeMillis();
 			Mat camImage = new Mat();
-			
 			capture.read(camImage);
 			if (camImage.empty()){
 				System.out.println(" --(!) No captured frame -- Break!");
-				continue;
+			
+				// Send notif that camera is off
+				System.out.println(".....cameraInactive alert......");
+				notifThread.p = BYTE_CAMERA_INACTIVE;
+				notifThread.myNotifId = myNotifId;
+				System.out.println("value of notifId is " + myNotifId);
+				notifThread.sendNotif = true;
+				
+				// Send mail that camera is off
+				SendMail.sendmail_notif = true;
+				SendMail.sendmail_vdo = true;
+				SendMail.sendmail = true;
+				SendMail.whichMail = 2;
+				
+				// Sound a warning alarm that camera is disconnected
+				
+				return;
 			}
-			
-			frame.setSize(camImage.width(),camImage.height());
-			my_panel.MatToBufferedImage(camImage);  
-			my_panel.repaint(); 
-			
+
 			//Send frame via live-feed
 			BufferedImage cam_img = matToBufferedImage(camImage);
 			BufferedImage camimg = timestampIt(cam_img);
@@ -317,15 +331,18 @@ public class Main {
 				time3 = System.currentTimeMillis();
 				store_name = outputFilename + ft.format(dNow) + ".mp4";
 				store_file_name = ft.format(dNow);
-				//writer =new VideoWriter(store_name, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
-				writer = ToolFactory.makeWriter(store_name);
-				writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
+				writer =new VideoWriter(store_name, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
+				//writer = ToolFactory.makeWriter(store_name);
+				//writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
 				startTime = System.nanoTime();
 				checkonce =false;
 			}
 			if (!Surv_Mode){
-				//writer.write(camImage);
-				writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+				//saveImage=bufferedImageToMat(camimg);
+				//writer.write(saveImage);
+				System.out.println("writing image into video file !surv");
+				writer.write(camImage);
+				//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 			}
 			
 			//Background subtraction without learning background
@@ -373,9 +390,9 @@ public class Main {
 					store_name = outputFilename + ft.format(dNow) + ".mp4";
 					store_file_name = ft.format(dNow);
 					SendMail.sendmail_vdo = false;
-					//writer =new VideoWriter(store_name, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
-					writer = ToolFactory.makeWriter(store_name);
-					writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
+					writer =new VideoWriter(store_name, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
+					//writer = ToolFactory.makeWriter(store_name);
+					//writer.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
 					System.out.println("''''''''''''''writer created succesfully''''''''''''''''''''''''");
 					startTime = System.nanoTime();
 					writer_close = true;
@@ -385,23 +402,28 @@ public class Main {
 				
 				//Write frame to video only when surveillance mode is ON
 				if(Surv_Mode){
-				//writer.write(camImage);
-					writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+					//saveImage=bufferedImageToMat(camimg);
+					//writer.write(saveImage);
+					//System.out.println("writing image into video file");
+					writer.write(camImage);
+					//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 				}
 				//If writer4android is open, write frame to android video also
 				if (writer4android != null){
-					if(writer4android.isOpen()){
+					if(writer4android.isOpened()){
 						if (timeAndroidVdoStarted!=-1 && (System.currentTimeMillis()-timeAndroidVdoStarted)/1000 >= 3){
 							//writer4android.release();
-							writer4android.close();
+							writer4android.release();
 							notifId2filepaths.put(new Integer(myNotifId), store_name4android);
 							notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 							notifThread.myNotifId = myNotifId;
 							notifThread.sendNotif = true;
 							myNotifId++;
 						}else {
+							saveImage=bufferedImageToMat(camimg);
+							writer4android.write(saveImage);
 							//writer4android.write(camImage);
-							writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
+							//writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
 						}
 					}
 				}
@@ -443,14 +465,14 @@ public class Main {
 								
 								store_name4android = outputFilename4android + ft.format(dNow) + ".mp4";
 								store_activityname = ft.format(dNow);
-								writer4android = ToolFactory.makeWriter(store_name4android);
-								writer4android.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
-								//writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
+								//writer4android = ToolFactory.makeWriter(store_name4android);
+								//writer4android.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
+								writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
 								startTime4android = System.nanoTime();
 								timeAndroidVdoStarted = System.currentTimeMillis();
 								
 							}else {
-								writer4android.close();
+								writer4android.release();
 								notifId2filepaths.put(new Integer(myNotifId), store_name4android);
 								notifThread.sendNotif = true;
 								notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
@@ -476,9 +498,9 @@ public class Main {
 					
 					store_name4android = outputFilename4android + ft.format(dNow) + ".mp4";
 					store_activityname = ft.format(dNow);
-					//writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
-					writer4android = ToolFactory.makeWriter(store_name4android);
-					writer4android.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
+					writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
+					//writer4android = ToolFactory.makeWriter(store_name4android);
+					//writer4android.addVideoStream(0, 0, ICodec.ID.CODEC_ID_MPEG4, 640, 480);
 					startTime4android = System.nanoTime();
 					time3 = System.currentTimeMillis();
 					timeAndroidVdoStarted = -1;
@@ -491,7 +513,7 @@ public class Main {
 				if ((time4 - time3)/1000 > 15 && noFaceAlert && alert1given && !alert2given){
 					alert2given = true;
 					System.out.println("warn level 2........................");
-					writer4android.close();
+					writer4android.release();
 					notifId2filepaths.put(new Integer(myNotifId), store_name4android);
 					notifThread.sendNotif = true;
 					notifThread.p = BYTE_ALERT2;
@@ -534,17 +556,16 @@ public class Main {
 				dNow = new Date();
 				startStoring = true;
 				
-				
-				
 				if(notifThread.p ==BYTE_FACEFOUND_VDOGENERATING || notifThread.p==BYTE_ALERT1){
 					System.out.println("abrupt end...........................");
-					writer4android.close();
+					writer4android.release();
 					notifId2filepaths.put(new Integer(myNotifId), store_name4android);
 					notifThread.p = 5;
 					notifThread.myNotifId = myNotifId;
 					notifThread.sendNotif = true;
 					SendMail.sendmail_notif = true;
 					SendMail.sendmail_vdo = true;
+					SendMail.whichMail = 1;
 					System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 					System.out.println("abrupt end value of notifId is " + myNotifId);
 					myNotifId++;
@@ -553,8 +574,8 @@ public class Main {
 				//Writer close once bg becomes normal
 				if (writer_close){
 					if (writer != null){
-						if(writer.isOpen()){
-							writer.close();
+						if(writer.isOpened()){
+							writer.release();
 							System.out.println("writer has been closed #chillax");
 						}
 					}
@@ -583,7 +604,7 @@ public class Main {
 			}
 			time4 = System.currentTimeMillis();
 			timeNow2 = System.currentTimeMillis();
-			System.out.println("                        FPS : " + (timeNow2 - timeNow1));
+			System.out.println("                        time : " + (timeNow2 - timeNow1));
 			
 			//System.out.println("frmes_read" + framesRead);
 			timeNow1 = timeNow2;

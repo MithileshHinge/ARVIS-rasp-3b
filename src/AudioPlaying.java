@@ -26,8 +26,8 @@ public class AudioPlaying extends Thread{
 				filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\siren.wav";
 			}
 			if(system_ready){
-				//filePath = "//home//pi//Desktop//System_ready.wav";
-				filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\System_ready.wav";
+				filePath = "//home//pi//Desktop//System_ready.wav";
+				//filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\System_ready.wav";
 				system_ready=false;
 			}
 			 audioInputStream = 

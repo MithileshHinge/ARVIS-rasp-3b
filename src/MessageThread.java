@@ -39,8 +39,8 @@ public class MessageThread extends Thread{
 					System.out.println("this is surveillance mode");
 					Main.Surv_Mode=true;
 					if (Main.writer != null){
-						if(Main.writer.isOpen()){
-							Main.writer.close();
+						if(Main.writer.isOpened()){
+							Main.writer.release();
 						}
 					}
 					break;
@@ -51,6 +51,8 @@ public class MessageThread extends Thread{
 					break;
 				case BYTE_EMAIL_NOTIF_ON:
 					SendMail.sendmail = true;
+					Main.sendMail = new SendMail();
+					Main.sendMail.start();
 					System.out.println("......email notif turned ON.....");
 					break;
 

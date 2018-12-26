@@ -35,15 +35,15 @@ public class Settingsmsd extends Thread {
 			if(p==1){
 				Main.Surv_Mode=false;
 				if (Main.writer != null){
-					if(Main.writer.isOpen()){
-						Main.writer.close();
+					if(Main.writer.isOpened()){
+						Main.writer.release();
 					}
 				}
 			}
 			if(p==3){
 				Main.Surv_Mode=true;
 				Main.checkonce=true;
-				Main.writer.close();
+				Main.writer.release();
 			}
 			socket_settings.close();
 			

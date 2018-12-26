@@ -15,7 +15,7 @@ public class ConnectThread extends Thread{
 	volatile boolean end = false;
 	private Socket s;
 	//MessageThread msgThread;
-	File file = new File("save_usr_pswd.txt");
+	File file = new File("//home//pi//arvis","save_usr_pswd.txt");
 	
 	public void run(){
 		while(!end){
@@ -40,6 +40,7 @@ public class ConnectThread extends Thread{
 		            	System.out.println("username is: " + line);
 		                Main.password = bufferedReader.readLine();
 		                NotificationThread.fcm_token= bufferedReader.readLine();
+		                SendMail.sendMailTo = bufferedReader.readLine();
 		            }else{
 		            	System.out.println("no username password is stored");	
 		            }
@@ -72,6 +73,7 @@ public class ConnectThread extends Thread{
 						NotificationThread.readyForNotifs = true;
 						Main.notifThread.start();
 					}
+					SendMail.sendMailTo = din.readUTF();
 					
 					try {
 						FileWriter fileWriter = new FileWriter(file);
@@ -80,6 +82,8 @@ public class ConnectThread extends Thread{
 						fileWriter.write(Main.password);
 						fileWriter.write("\r\n");            // write new line
 						fileWriter.write(NotificationThread.fcm_token);
+						fileWriter.write("\r\n");
+						fileWriter.write(SendMail.sendMailTo);
 						fileWriter.flush();
 						fileWriter.close();
 					} catch (IOException e) {
