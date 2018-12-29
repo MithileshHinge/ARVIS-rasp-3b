@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 public class SendingFrame extends Thread {
     private static int PORT_LIVEFEED_UDP = 6663;
     private static int PORT_LIVEFEED_TCP = 6666;
-    private static ServerSocket serverSocket;
+    //private static ServerSocket serverSocket;
     private static DatagramSocket udpSocket;
     private static Socket socket;
     public static BufferedImage frame;

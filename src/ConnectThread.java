@@ -15,7 +15,8 @@ public class ConnectThread extends Thread{
 	volatile boolean end = false;
 	private Socket s;
 	//MessageThread msgThread;
-	File file = new File("//home//pi//arvis","save_usr_pswd.txt");
+	//File file = new File("//home//pi//arvis","save_usr_pswd.txt");
+	File file = new File("save_usr_pswd.txt");
 	
 	public void run(){
 		while(!end){

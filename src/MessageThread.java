@@ -20,7 +20,8 @@ public class MessageThread extends Thread{
 			BYTE_START_LIVEFEED=2, 
 			BYTE_RESTART=11,
 			BYTE_START_AUDIO = 13,
-			BYTE_START_VIDEO_DOWNLOAD = 14;
+			BYTE_START_VIDEO_DOWNLOAD = 14,
+			BYTE_START_LISTEN = 5;
 		
 	volatile boolean end = false;
 	
@@ -105,6 +106,12 @@ public class MessageThread extends Thread{
 					System.out.println("################ Video Download request ");
 					Main.sendingVideo = new SendingVideo();
 					Main.sendingVideo.start();
+					break;
+					
+				case BYTE_START_LISTEN :
+					System.out.println("############## Listen");
+					Main.listen = new Listen();
+					Main.listen.start();
 					break;
 					
 				}
