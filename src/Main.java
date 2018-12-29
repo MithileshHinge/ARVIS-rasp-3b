@@ -44,10 +44,10 @@ public class Main {
 	private static boolean detectFace = true;
 	private static boolean faceNotCovered = false;
 	
-	/*public static final String outputFilename = "//home//pi//arvis//videos//";
-	public static final String outputFilename4android = "//home//pi//arvis//videos4android//";*/
-	public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
-	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";
+	public static final String outputFilename = "//home//pi//arvis//videos//";
+	public static final String outputFilename4android = "//home//pi//arvis//videos4android//";
+	/*public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
+	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";*/
 	public static VideoWriter writer;
 	public static boolean startStoring = true;
 	public static long startTime;
@@ -93,10 +93,9 @@ public class Main {
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	public static Listen listen;
-	public static final String servername = "192.168.1.103";
+	public static final String servername = "192.168.1.104";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "vv";
+	public static final String HASH_ID = "xx";
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
@@ -276,11 +275,11 @@ public class Main {
 		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
 		
 		
-		/*frontal_face_cascade = new CascadeClassifier("//home//pi//arvis//haarcascades//haarcascade_frontalface_alt.xml");
-		mouthCascade = new CascadeClassifier("//home//pi//arvis//haarcascades//Mouth.xml");*/
+		frontal_face_cascade = new CascadeClassifier("//home//pi//arvis//haarcascades//haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier("//home//pi//arvis//haarcascades//Mouth.xml");
 		
-		frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
-		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");
+		/*frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");*/
 		if (frontal_face_cascade.empty()) {
 			System.out.println("--(!)Error loading Front Face Cascade\n");
 			return;
@@ -419,10 +418,7 @@ public class Main {
 							notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 							notifThread.myNotifId = myNotifId;
 							notifThread.sendNotif = true;
-							if(myNotifId<99)
-								myNotifId++;
-							else
-								myNotifId = 1;
+							myNotifId++;
 						}else {
 							saveImage=bufferedImageToMat(camimg);
 							writer4android.write(saveImage);
@@ -481,10 +477,7 @@ public class Main {
 								notifThread.sendNotif = true;
 								notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 								notifThread.myNotifId = myNotifId;
-								if(myNotifId < 99)
-									myNotifId++;
-								else
-									myNotifId = 1;
+								myNotifId++;
 							}
 						}
 					}
@@ -526,10 +519,7 @@ public class Main {
 					notifThread.p = BYTE_ALERT2;
 					notifThread.myNotifId = myNotifId;
 					System.out.println("alert level 2 value of notifId is " + myNotifId);
-					if(myNotifId<99)
-						myNotifId++;
-					else
-						myNotifId = 1;
+					myNotifId++;
 					noFaceAlert = false;
 					detectFace = false;
 					SendMail.sendmail_notif = true;
@@ -578,10 +568,7 @@ public class Main {
 					SendMail.whichMail = 1;
 					System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 					System.out.println("abrupt end value of notifId is " + myNotifId);
-					if(myNotifId<99)
-						myNotifId++;
-					else
-						myNotifId = 1;
+					myNotifId++;
 				}
 				
 				//Writer close once bg becomes normal
