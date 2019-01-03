@@ -44,8 +44,8 @@ public class Main {
 	private static boolean detectFace = true;
 	private static boolean faceNotCovered = false;
 	
-	public static final String outputFilename = "//home//pi//arvis//videos//";
-	public static final String outputFilename4android = "//home//pi//arvis//videos4android//";
+	public static final String outputFilename = "//home//pi//Desktop//videos//";
+	public static final String outputFilename4android = "//home//pi//Desktop//videos4android//";
 	/*public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
 	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";*/
 	public static VideoWriter writer;
@@ -67,7 +67,8 @@ public class Main {
 		BYTE_ALERT2 = 4, 
 		BYTE_ABRUPT_END = 5, 
 		BYTE_LIGHT_CHANGE = 6,
-		BYTE_CAMERA_INACTIVE = 7;
+		BYTE_CAMERA_INACTIVE = 7,
+		BYTE_MEMORY_ALERT = 8;
 	
 	public static VideoWriter writer4android;
 	public static boolean writer_close4android = false;
@@ -93,9 +94,9 @@ public class Main {
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	public static final String servername = "192.168.1.104";
+	public static final String servername = "192.168.1.101";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "xx";
+	public static final String HASH_ID = "yy";
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
@@ -248,7 +249,8 @@ public class Main {
 		ConnectThread connThread = new ConnectThread();
 		connThread.start();
 		
-		
+		CheckSpace checkSpace = new CheckSpace();
+		checkSpace.start();
 		//sendingFrame = new SendingFrame();
 		//sendingFrame.start();
 		
@@ -275,8 +277,8 @@ public class Main {
 		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
 		
 		
-		frontal_face_cascade = new CascadeClassifier("//home//pi//arvis//haarcascades//haarcascade_frontalface_alt.xml");
-		mouthCascade = new CascadeClassifier("//home//pi//arvis//haarcascades//Mouth.xml");
+		frontal_face_cascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//Mouth.xml");
 		
 		/*frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
 		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");*/
@@ -309,13 +311,17 @@ public class Main {
 				notifThread.myNotifId = myNotifId;
 				System.out.println("value of notifId is " + myNotifId);
 				notifThread.sendNotif = true;
+				if(myNotifId < 99)
+					myNotifId++;
+				else
+					myNotifId = 1;
 				
 				// Send mail that camera is off
 				SendMail.sendmail_notif = true;
 				SendMail.sendmail_vdo = true;
 				SendMail.sendmail = true;
 				SendMail.whichMail = 2;
-				
+				System.out.println(".............Main: whichMail = "+SendMail.whichMail);
 				// Sound a warning alarm that camera is disconnected
 				
 				return;
@@ -341,7 +347,11 @@ public class Main {
 				//saveImage=bufferedImageToMat(camimg);
 				//writer.write(saveImage);
 				System.out.println("writing image into video file !surv");
-				writer.write(camImage);
+				if (writer != null){
+				if(writer.isOpened()){
+					writer.write(camImage);
+				}
+				}
 				//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 			}
 			
@@ -405,7 +415,11 @@ public class Main {
 					//saveImage=bufferedImageToMat(camimg);
 					//writer.write(saveImage);
 					//System.out.println("writing image into video file");
-					writer.write(camImage);
+					if (writer != null){
+					if(writer.isOpened()){
+						writer.write(camImage);
+					}
+					}
 					//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 				}
 				//If writer4android is open, write frame to android video also
@@ -418,10 +432,17 @@ public class Main {
 							notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 							notifThread.myNotifId = myNotifId;
 							notifThread.sendNotif = true;
-							myNotifId++;
+							if(myNotifId < 99)
+								myNotifId++;
+							else
+								myNotifId = 1;
 						}else {
 							saveImage=bufferedImageToMat(camimg);
+							if (writer4android != null){
+								if(writer4android.isOpened()){
 							writer4android.write(saveImage);
+								}
+							}
 							//writer4android.write(camImage);
 							//writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
 						}
@@ -477,7 +498,10 @@ public class Main {
 								notifThread.sendNotif = true;
 								notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 								notifThread.myNotifId = myNotifId;
-								myNotifId++;
+								if(myNotifId < 99)
+									myNotifId++;
+								else
+									myNotifId = 1;
 							}
 						}
 					}
@@ -519,7 +543,10 @@ public class Main {
 					notifThread.p = BYTE_ALERT2;
 					notifThread.myNotifId = myNotifId;
 					System.out.println("alert level 2 value of notifId is " + myNotifId);
-					myNotifId++;
+					if(myNotifId < 99)
+						myNotifId++;
+					else
+						myNotifId = 1;
 					noFaceAlert = false;
 					detectFace = false;
 					SendMail.sendmail_notif = true;
@@ -563,12 +590,12 @@ public class Main {
 					notifThread.p = 5;
 					notifThread.myNotifId = myNotifId;
 					notifThread.sendNotif = true;
-					SendMail.sendmail_notif = true;
-					SendMail.sendmail_vdo = true;
-					SendMail.whichMail = 1;
 					System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 					System.out.println("abrupt end value of notifId is " + myNotifId);
-					myNotifId++;
+					if(myNotifId < 99)
+						myNotifId++;
+					else
+						myNotifId = 1;
 				}
 				
 				//Writer close once bg becomes normal
@@ -585,7 +612,13 @@ public class Main {
 					alert2given = false;
 					noFaceAlert = true;
 					timeAndroidVdoStarted = -1;
+					SendMail.whichMail = 1;
 					SendMail.sendmail_vdo = true;
+					System.out.println(".............Main2: whichMail = "+SendMail.whichMail);
+					System.out.println(".............Main2: sendMail vdo = "+SendMail.sendmail_vdo);
+					System.out.println(".............Main2: sendMail notif = "+SendMail.sendmail_notif);
+					System.out.println(".............Main2: sendMail = "+SendMail.sendmail);
+					
 					System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
 					once = false;
 				}

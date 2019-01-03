@@ -149,8 +149,9 @@ public class NotificationThread extends Thread {
 	static OutputStream out_note, out_frame;
 	public InputStream in_note;
 	public byte p;
-	public int myNotifId;
+	public int myNotifId ;
 	public BufferedImage notifFrame;
+	public static int memoryLeft;
 	
 	public static String fcm_token; //= "c-UYQcaz-aE:APA91bE5oeWOoSzMGggYLL7FfezyfK7Ed8-w0EUADWW5Uwlo_PjrAnXBVrUNEil146wrsxISlRrnDOoAicrI6l2is_uuz1uIBIgQ81DHz76CGx3gp8ZLG3HYsE4PgkYjQUiXL0_lAhnV";					//remove hard coded value
 	public static Boolean readyForNotifs = false;	// Turns true when FCM reg token of app is received!
@@ -162,7 +163,7 @@ public class NotificationThread extends Thread {
 	public NotificationThread() { 
 		try {
 			//serviceAccount = new FileInputStream("D:\\college\\project\\eclipse\\ARVIS-rasp-3b\\arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
-			serviceAccount = new FileInputStream("//home//pi//arvis//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
+			serviceAccount = new FileInputStream("//home//pi//Desktop//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
 			FirebaseOptions options = new FirebaseOptions.Builder()
 				    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
 				    .setDatabaseUrl("https://arvis-aws-rasp-3b.firebaseio.com/")
@@ -260,6 +261,8 @@ public class NotificationThread extends Thread {
 			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){	
 				dataJson.put("date",activityName);
 				System.out.println("..........Prepared 2nd notif json object for app");
+			}else if(p == Main.BYTE_MEMORY_ALERT){
+				dataJson.put("%memory", memoryLeft);
 			}
 			JSONObject json = new JSONObject();
 			json.put("to",tokenId.trim());

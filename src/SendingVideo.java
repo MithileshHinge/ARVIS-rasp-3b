@@ -77,6 +77,9 @@ public class SendingVideo extends Thread {
 			
 			if (filepath != null){
 				sendVideo(listener, filepath);
+				File deleteit = new File (filepath) ;
+				System.out.println("delete file " + deleteit);
+				deleteit.delete();
 			}
 			s.close();
 			//sc.close();
