@@ -162,7 +162,7 @@ public class NotificationThread extends Thread {
 
 	public NotificationThread() { 
 		try {
-			//serviceAccount = new FileInputStream("D:\\college\\project\\eclipse\\ARVIS-rasp-3b\\arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
+			//serviceAccount = new FileInputStream("F:\\GitHub\\ARVIS-rasp-3b\\arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
 			serviceAccount = new FileInputStream("//home//pi//Desktop//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
 			FirebaseOptions options = new FirebaseOptions.Builder()
 				    .setCredentials(GoogleCredentials.fromStream(serviceAccount))

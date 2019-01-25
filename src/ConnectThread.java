@@ -7,17 +7,30 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class ConnectThread extends Thread{
 	
 	private static final int connectPort = 6660;
+	private String LocalIP;
 	volatile boolean end = false;
 	private Socket s;
 	//MessageThread msgThread;
-	File file = new File("//home//pi//arvis","save_usr_pswd.txt");
+	File file = new File("//home//pi//Desktop","save_usr_pswd.txt");
+	//File file = new File("save_usr_pswd.txt");
 	
 	public void run(){
+		InetAddress inetAddress;
+		try {
+			inetAddress = InetAddress.getLocalHost();
+			LocalIP = inetAddress.getHostAddress().toString();
+			System.out.println("LOCAL ADDRESS : " + LocalIP);
+		} catch (UnknownHostException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		while(!end){
 			try {
 				s = new Socket(Main.servername, connectPort);
@@ -93,6 +106,8 @@ public class ConnectThread extends Thread{
 					System.out.println("FCM tokem : "+NotificationThread.fcm_token);
 				}
 				
+				dout.writeUTF(LocalIP);
+				dout.flush();
 				MessageThread msg = new MessageThread();
 				msg.start();
 				System.out.println("..................Messsage thread started");

@@ -4,7 +4,12 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -21,6 +26,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.video.BackgroundSubtractorMOG2;
@@ -85,7 +91,7 @@ public class Main {
 	
 	public static boolean alert2given = false;
 	public static boolean alert1given = false;
-	public static int framesRead = 0;
+	public static volatile int framesRead = 0;
 	
 	public static boolean Surv_Mode=true;
 	//public static String fourcc = "X264";    /linux environ
@@ -95,8 +101,9 @@ public class Main {
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
 	public static final String servername = "192.168.1.101";
+	//public static final String servername = "13.233.142.145";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "yy";
+	public static final String HASH_ID = "uu";
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
@@ -106,11 +113,18 @@ public class Main {
 	*/
 	public static int contoursCheck = 0;
 	public static Mat saveImage;
+	
+	public static ArrayList<Mat> past5frames;
+	public static DetectPerson detectPerson;
+	public static int lightChangeVerified;
+	
+	public static final int FRAMES_TO_LEARN = 60;
+	
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		startProgram();
 		
 	}
@@ -170,7 +184,7 @@ public class Main {
 		  return mat;
 		}
 	
-	private static BufferedImage matToBufferedImage(Mat frame) {
+	public static BufferedImage matToBufferedImage(Mat frame) {
 		int type = 0;
 		if (frame.channels() == 1) {
 			type = BufferedImage.TYPE_BYTE_GRAY;
@@ -201,7 +215,7 @@ public class Main {
 	    return dest;
 	}
 	
-	private static int CalcContours(Mat frame){
+	/*private static int CalcContours(Mat frame){
 		//Mat imageBlurr = new Mat();
 		//Imgproc.GaussianBlur(fgMask, imageBlurr, new Size(3,3), 0);
 		Imgproc.medianBlur(frame, frame, 9);
@@ -214,11 +228,10 @@ public class Main {
 	    	Imgproc.drawContours(frame, contours, 1, new Scalar(0,0,255));
 	    }
 	    return contours.size();
-	}
+	}*/
 	
-	
-	public static void startProgram(){
-		
+	public static void startProgram() throws Exception{
+			
 		frame_no = 0;
 		detectFace = true;
 		faceNotCovered = false;
@@ -228,10 +241,9 @@ public class Main {
 		myNotifId = 1;
 		
 		writer_close4android = false;
-		once =false;
 		timeAndroidVdoStarted = -1;
 		j = true;
-		checkonce =true;
+		checkonce = true;
 		
 		//Disable auto focus of camera through terminal
 		
@@ -239,9 +251,12 @@ public class Main {
 		alert1given = false;
 		framesRead = 0;
 		
-		Surv_Mode=true;
 		notifId2filepaths = new ConcurrentHashMap<>();
 		give_system_ready_once = true;
+		
+		past5frames = new ArrayList<Mat>(5);
+		lightChangeVerified = 0;
+		
 		
 		notifThread = new NotificationThread();
 		//sendingVideo = new SendingVideo();
@@ -270,11 +285,16 @@ public class Main {
 		
 		VideoCapture capture = new VideoCapture(0);
 		if (!capture.isOpened()) {
-			System.out.println("Error - cannot open camera!");
+			System.out.println("Error - cannot open camera! 0 ");
+			/*capture = new VideoCapture(1);
+			if(!capture.isOpened()){
+				System.out.println("Error - cannot open camera! 1 ");
+				return;
+			}*/
 			return;
 		}
 		
-		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
+		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(FRAMES_TO_LEARN, 16, false);
 		
 		
 		frontal_face_cascade = new CascadeClassifier("//home//pi//Desktop//haarcascades//haarcascade_frontalface_alt.xml");
@@ -326,11 +346,13 @@ public class Main {
 				
 				return;
 			}
+			
+			//add to frame buffer (for light change)
+			past5frames.add(camImage);
+			if (past5frames.size() > 5)
+				past5frames.remove(0);
 
-			//Send frame via live-feed
-			BufferedImage cam_img = matToBufferedImage(camImage);
-			BufferedImage camimg = timestampIt(cam_img);
-			sendingFrame.frame = camimg;
+			
 			
 			if (!Surv_Mode && checkonce){
 				System.out.println("..........................recording started...................................");
@@ -378,8 +400,13 @@ public class Main {
 			Mat output = new Mat();
 			camImage.copyTo(output, fgMask);
 			
+			//Send frame via live-feed
+			BufferedImage cam_img = matToBufferedImage(camImage);
+			BufferedImage camimg = timestampIt(cam_img);
+			sendingFrame.frame = camimg;
+			
 			//Get the number of contours
-			int noOfContours = CalcContours(fgMask);
+			//int noOfContours = CalcContours(fgMask);
 			//System.out.println("Contours = " + noOfContours + " BlackCountPercentage = " + blackCountPercent + "%");
 			System.out.println(blackCountPercent+"%");
 			
@@ -390,8 +417,8 @@ public class Main {
 				audioPlaying.system_ready=true;
 				audioPlaying.start();
 			}
-			//Consider background change if black % is less that 90
-			if (blackCountPercent < 90 && framesRead > 100) {
+			//Consider background change if black % is less that 96
+			if (blackCountPercent < 96 && framesRead >= FRAMES_TO_LEARN) {
 				
 				//Start recording video just after bg changes
 				if (startStoring && Surv_Mode){
@@ -409,6 +436,52 @@ public class Main {
 					startStoring = false;
 					
 				}
+				
+				if (blackCountPercent < 70 && lightChangeVerified == 0){
+					//maybe light change, verify:
+					System.out.println("Verifying light change:::-----");
+					Mat camImageGray = new Mat();
+					Imgproc.cvtColor(camImage, camImageGray, Imgproc.COLOR_BGR2GRAY);
+					Mat camImageGrayInitial = new Mat();
+					Imgproc.cvtColor(past5frames.get(2), camImageGrayInitial, Imgproc.COLOR_BGR2GRAY);
+					Imgcodecs.imwrite("camImageGrayInitial.jpg", camImageGrayInitial);
+					Imgcodecs.imwrite("camImageGray.jpg", camImageGray);
+					Imgcodecs.imwrite("past5frames-5th.jpg", past5frames.get(4));
+					final int patchSize = 40;
+					final double changeThresh = 5;
+					final double numBlocksThreshPercent = 0.7;
+					int changedBlocks = 0;
+					
+					for (int i=0; i<camImageGray.rows()/patchSize; i++){
+						for (int j=0; j<camImageGray.cols()/patchSize; j++){
+							Mat patch1 = camImageGray.submat(i*patchSize, (i+1)*patchSize, j*patchSize, (j+1)*patchSize);
+							Mat patch2 = camImageGrayInitial.submat(i*patchSize, (i+1)*patchSize, j*patchSize, (j+1)*patchSize);
+							
+							Scalar mean1 = Core.mean(patch1);
+							Scalar mean2 = Core.mean(patch2);
+							
+							System.out.println(mean1.val[0] + ", " + mean2.val[0] + "," + Math.abs(mean1.val[0] - mean2.val[0]));
+							if (Math.abs(mean1.val[0] - mean2.val[0]) > changeThresh){
+								changedBlocks++;
+							}
+						}
+					}
+					
+					if (changedBlocks > numBlocksThreshPercent * (camImage.rows()/patchSize * camImage.cols()/patchSize)){
+						// Lights have changed, now check if there is a person to determine whether to learn
+						System.out.println("Light change verified true.............");
+						lightChangeVerified = 1;
+						detectPerson = new DetectPerson();
+						detectPerson.past5frames.addAll(past5frames);						
+						detectPerson.start();
+						
+					}else {
+						// Lights have not changed, continue as it is
+						System.out.println("Light change verified false...........");
+						lightChangeVerified = -1;
+					}
+				}
+				
 				
 				//Write frame to video only when surveillance mode is ON
 				if(Surv_Mode){
@@ -620,18 +693,23 @@ public class Main {
 					System.out.println(".............Main2: sendMail = "+SendMail.sendmail);
 					
 					System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
-					once = false;
 				}
 				
 				detectFace = true;
 				faceDetectionsCounter = 0;
 				frame_no = 0;
 				
+				lightChangeVerified = 0;
+				if (detectPerson != null){
+					detectPerson.detect = false;
+					detectPerson = null;
+				}
+				
 				//apply bgsubtraction while learning background
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
 			}
 			
-			if (framesRead < 110) {
+			if (framesRead < FRAMES_TO_LEARN) {
 				framesRead++;
 				System.out.println("frmes_read" + framesRead);
 			}
@@ -643,5 +721,4 @@ public class Main {
 			timeNow1 = timeNow2;
 		}
 	}
-
 }
