@@ -6,6 +6,9 @@ public class CheckSpace extends Thread {
 	private static File rootDir = new File("/");
 	private static File pendriveDir = new File("/media/usb1"); //use when pendriceconnected..do check path
 	private static File videosDir = new File("/home/pi/Desktop/videos");
+	private static long videosDirThreshKB = 6000000;
+	private static long videos4androidDirTotalThreshKB = 200000;
+	private static long videos4androidDirThreshKB = 100000;
 	private static File videos4androidDir = new File("/home/pi/Desktop/videos4android");
 	private static long checkTime = 1000;
 	private static boolean notifyOnce = true;
@@ -47,11 +50,34 @@ public class CheckSpace extends Thread {
 
 		}
 
-		if(freeSpacePercent>80) checkTime=1000*60*60*72;
-		else if(freeSpacePercent>60) checkTime=3600000*48;
-		else if(freeSpacePercent>40) checkTime=3600000*24;
-		else if(freeSpacePercent>20) checkTime=3600000*12;
-		else checkTime=3600000;
+		if(freeSpacePercent>80) checkTime=1000*60*60*48;
+		else if(freeSpacePercent>60) checkTime=3600000*24;
+		else if(freeSpacePercent>40) checkTime=3600000*12;
+		else if(freeSpacePercent>20) checkTime=3600000*6;
+		else{
+			checkTime=3600000;
+			
+			File[] videos = videosDir.listFiles();
+			Arrays.sort(videos);
+			long totSpace = 0;
+			for (File video : videos){
+				totSpace += video.length();
+				video.delete();
+				if (totSpace/1000 >= videosDirThreshKB){
+					break;
+				}
+			}
+			
+			File[] videosAndroid = videos4androidDir.listFiles();
+			if (videosAndroid != null){
+				if (videosAndroid.length > 1000){
+					Arrays.sort(videosAndroid);
+					for (int i=0; i<600; i++){
+						videosAndroid[i].delete();
+					}
+				}
+			}
+		}
 
 
 		try {

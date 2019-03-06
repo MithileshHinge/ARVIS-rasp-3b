@@ -35,6 +35,7 @@ public class SendingFrame extends Thread {
 	            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	            ImageIO.write(frame, "jpg", baos);
 	            byte[] buf = baos.toByteArray();
+	            System.out.println("buff size" + buf.length);
 	            
 	            InetAddress serverAddress = InetAddress.getByName(servername);
 	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, serverAddress, PORT_LIVEFEED_UDP);

@@ -18,8 +18,9 @@ public class ConnectThread extends Thread{
 	volatile boolean end = false;
 	private Socket s;
 	//MessageThread msgThread;
-	File file = new File("//home//pi//Desktop","save_usr_pswd.txt");
+	File file = new File(Main.ROOT_DIR , "save_usr_pswd.txt");
 	//File file = new File("save_usr_pswd.txt");
+	MessageThread msg;
 	
 	public void run(){
 		InetAddress inetAddress;
@@ -68,7 +69,6 @@ public class ConnectThread extends Thread{
 					dout.flush();
 					if(NotificationThread.fcm_token != null){
 						NotificationThread.readyForNotifs = true;
-						Main.notifThread.start();
 					}
 					while(true){
 					int i = in.read();
@@ -84,7 +84,6 @@ public class ConnectThread extends Thread{
 					NotificationThread.fcm_token = din.readUTF();
 					if(NotificationThread.fcm_token != null){
 						NotificationThread.readyForNotifs = true;
-						Main.notifThread.start();
 					}
 					SendMail.sendMailTo = din.readUTF();
 					
@@ -106,9 +105,9 @@ public class ConnectThread extends Thread{
 					System.out.println("FCM tokem : "+NotificationThread.fcm_token);
 				}
 				
-				dout.writeUTF(LocalIP);
-				dout.flush();
-				MessageThread msg = new MessageThread();
+				/*dout.writeUTF(LocalIP);
+				dout.flush();*/
+				msg = new MessageThread();
 				msg.start();
 				System.out.println("..................Messsage thread started");
 				
@@ -119,7 +118,7 @@ public class ConnectThread extends Thread{
 
 			} catch (IOException e) {
 				e.printStackTrace();
-				
+				msg.end();
 				try {
 					s.close();
 				} catch (IOException e1) {
@@ -127,6 +126,7 @@ public class ConnectThread extends Thread{
 				}
 			}
 		}
+		msg.end();
 		try {
 			s.close();
 		} catch (IOException e) {
@@ -134,7 +134,7 @@ public class ConnectThread extends Thread{
 		}
 	}
 	
-	public void end(){
+	/*public void end(){
 		this.end = true;
-	}
+	}*/
 }

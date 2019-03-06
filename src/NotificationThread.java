@@ -163,7 +163,7 @@ public class NotificationThread extends Thread {
 	public NotificationThread() { 
 		try {
 			//serviceAccount = new FileInputStream("F:\\GitHub\\ARVIS-rasp-3b\\arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
-			serviceAccount = new FileInputStream("//home//pi//Desktop//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
+			serviceAccount = new FileInputStream(Main.ROOT_DIR +"//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
 			FirebaseOptions options = new FirebaseOptions.Builder()
 				    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
 				    .setDatabaseUrl("https://arvis-aws-rasp-3b.firebaseio.com/")
@@ -185,7 +185,8 @@ public class NotificationThread extends Thread {
 		while (true) {
 			if (sendNotif) {
 				System.out.println(".....notif sending started.....");
-				send_FCM_Notification(fcm_token,serverKey,p,Main.store_activityname,myNotifId,notifFrame);
+				if(readyForNotifs)
+					send_FCM_Notification(fcm_token,serverKey,p,Main.store_activityname,myNotifId,notifFrame);
 				sendNotif = false;
 					/*socket_note = new Socket(servername,port_note);
 					System.out.println("######################################.......................Client Sapadla!!!!!!");
@@ -221,7 +222,7 @@ public class NotificationThread extends Thread {
 					socket_note.close();*/
 			} else {
 				try {
-					Thread.sleep(0, 10000);
+					Thread.sleep(500);
 				} catch (InterruptedException e1) {
 					System.out.println(String.format("connection_problem re bawa!!!"));
 					e1.printStackTrace();

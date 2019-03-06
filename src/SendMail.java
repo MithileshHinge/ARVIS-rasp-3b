@@ -32,7 +32,7 @@ public class SendMail extends Thread {
 	while(true)
 	{
 		try {
-			Thread.sleep(0, 10000);
+			Thread.sleep(10000);
 
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
@@ -122,7 +122,7 @@ public class SendMail extends Thread {
 		         message.setSubject("Magic Eye Memory Alert");
 
 		         // Now set the actual message
-		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the insufficiency of memory space available on your Magic Eye system" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY"+'\n'+"FOR ANY TYPE OF QUERY CONTACT : +91 8793587391");
+		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the insufficiency of memory space available on your Magic Eye system" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
 
 		         // Set text message part
 		         multipart.addBodyPart(messageBodyPart);
