@@ -1,6 +1,12 @@
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import javax.imageio.ImageIO;
 
@@ -31,8 +37,9 @@ public class SendingFrame extends Thread {
         		out = socket.getOutputStream();
         		out.write(1);
         		out.flush();
-        	
+        		
 	            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	            if (frame == null) continue;
 	            ImageIO.write(frame, "jpg", baos);
 	            byte[] buf = baos.toByteArray();
 	            System.out.println("buff size" + buf.length);

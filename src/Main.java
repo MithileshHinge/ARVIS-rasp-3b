@@ -97,14 +97,14 @@ public class Main {
 	public static String servername = "13.233.111.181";
 	//public static final String servername = "13.233.81.62";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "uu";
+	public static final String HASH_ID = "xx";
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
 	public static SendMail sendMail;
 	/*private static int cameraErrorCount = 0;
 	private static int cameraErrorCountThresh = 15;		// check for 5 seconds considering 3 fps
-	 */
+	*/
 	public static int contoursCheck = 0;
 	public static Mat saveImage;
 
@@ -336,7 +336,20 @@ public class Main {
 			capture.read(camImage);
 			if (camImage.empty()){
 				System.out.println(" --(!) No captured frame -- Break!");
-
+				
+				if (writer != null){
+					if(writer.isOpened()){
+						writer.release();
+						System.out.println("writer has been closed #chillax.........when camera disconnected!!");
+					}
+				}
+				if (writer4android != null){
+					if(writer4android.isOpened()){
+						writer4android.release();
+						System.out.println("writer4android has been closed #chillax............when camera disconnected!!!");
+					}
+				}
+				
 				// Send notif that camera is off
 				System.out.println(".....cameraInactive alert......");
 				notifThread.p = BYTE_CAMERA_INACTIVE;
@@ -602,7 +615,7 @@ public class Main {
 
 
 				//Give alert1 and start writer4android
-				if (noFaceAlert && !alert1given && blackCountPercent<85 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
+				if (noFaceAlert && !alert1given && blackCountPercent<93 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
 					alert1given = true;
 					System.out.println("warn level 1.......................");
 

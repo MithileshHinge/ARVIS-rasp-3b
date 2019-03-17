@@ -155,7 +155,7 @@ public class NotificationThread extends Thread {
 	
 	public static String fcm_token; //= "c-UYQcaz-aE:APA91bE5oeWOoSzMGggYLL7FfezyfK7Ed8-w0EUADWW5Uwlo_PjrAnXBVrUNEil146wrsxISlRrnDOoAicrI6l2is_uuz1uIBIgQ81DHz76CGx3gp8ZLG3HYsE4PgkYjQUiXL0_lAhnV";					//remove hard coded value
 	public static Boolean readyForNotifs = false;	// Turns true when FCM reg token of app is received!
-	public Boolean sendNotif = false;	
+	public static Boolean sendNotif = false;	
 	static String serverKey = "AIzaSyD5bIjH30FEMF2hmTrRzjRVGSU2NYFYJKg";
 	final static private String FCM_URL = "https://fcm.googleapis.com/fcm/send";
 	FileInputStream serviceAccount;
