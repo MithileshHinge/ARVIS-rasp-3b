@@ -187,7 +187,7 @@ public class NotificationThread extends Thread {
 				System.out.println(".....notif sending started.....");
 				if(readyForNotifs)
 					send_FCM_Notification(fcm_token,serverKey,p,Main.store_activityname,myNotifId,notifFrame);
-				sendNotif = false;
+					sendNotif = false;
 					/*socket_note = new Socket(servername,port_note);
 					System.out.println("######################################.......................Client Sapadla!!!!!!");
 					out_note = socket_note.getOutputStream();

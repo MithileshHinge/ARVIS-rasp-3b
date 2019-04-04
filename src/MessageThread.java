@@ -119,7 +119,7 @@ public class MessageThread extends Thread{
 
 				socket.getOutputStream().write(1);
 				socket.getOutputStream().flush();
-				System.out.println("###################   Message thread acknowledgment sent to server");
+				System.out.println("###################   Message thread acknowledgment sent to server for = "+p);
 
 				socket.close();
 			}catch (IOException e){

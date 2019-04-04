@@ -44,6 +44,7 @@ public class AudioPlaying extends Thread{
 		    	 play_alarm = false;
 		    	 clip.loop(Clip.LOOP_CONTINUOUSLY);
 		     }else{
+		    	 //System.out.println("+++++++++++++++++++++++Trying to play clip+++++++++++++++++++++++++++++++++++++++++");
 		    	 clip.loop(0);
 		     }
 		     

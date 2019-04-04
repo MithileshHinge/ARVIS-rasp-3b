@@ -94,10 +94,10 @@ public class Main {
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	public static String servername = "13.233.111.181";
-	//public static final String servername = "13.233.81.62";
+	//public static String servername = "13.233.111.181";
+	public static final String servername = "13.232.140.141";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "xx";
+	public static String HASH_ID;
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
@@ -143,8 +143,10 @@ public class Main {
 		//File config = new File("C://Users//Home//Desktop//config.txt");
 		File config = new File(configFile);
 		Scanner scnr = new Scanner(config);
-
 		//Reading each line of file using Scanner class
+		
+		HASH_ID = scnr.nextLine();
+		
 		ROOT_DIR = scnr.nextLine();
 		System.out.println(ROOT_DIR);
 		outputFilename = ROOT_DIR + "//videos//";
@@ -435,7 +437,7 @@ public class Main {
 			System.out.println(ft.format(logDateTime) + ": " + blackCountPercent+"%");
 			blackCountPercent_to_write = blackCountPercent;
 			//To give system is ready
-			if(framesRead==200 && give_system_ready_once){
+			if(framesRead==(FRAMES_TO_LEARN - 5) && give_system_ready_once){
 				give_system_ready_once = false;
 				System.out.println("SYSTEM is Ready");
 				audioPlaying.system_ready=true;
@@ -467,7 +469,7 @@ public class Main {
 					startStoring = false;
 
 				}
-				/*
+				
 				if (blackCountPercent < 70 && lightChangeVerified == 0){
 					//maybe light change, verify:
 					System.out.println("Verifying light change:::-----");
@@ -499,10 +501,15 @@ public class Main {
 						// Lights have changed, now check if there is a person to determine whether to learn
 						System.out.println("Light change verified true.............");
 						lightChangeVerified = 1;
-						detectPerson = new DetectPerson();
+						/*detectPerson = new DetectPerson();
 						detectPerson.past5frames.addAll(past5frames);						
 						detectPerson.start();
-
+						*/
+						framesRead=0;
+						resetAutoExp();
+						notifThread.p = BYTE_LIGHT_CHANGE;
+						notifThread.myNotifId = myNotifId;
+						notifThread.sendNotif = true;
 					}else {
 						// Lights have not changed, continue as it is
 						System.out.println("Light change verified false...........");
@@ -513,7 +520,7 @@ public class Main {
 
 				if (lightChangeVerified == -1 && (System.currentTimeMillis() - lightChangeDecisionOutdatedTimer)/1000 > 5*60){ //recheck light change after 5 mins
 					lightChangeVerified = 0;
-				}*/
+				}
 
 
 				//Write frame to video only when surveillance mode is ON

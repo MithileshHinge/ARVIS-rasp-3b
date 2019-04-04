@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 public class ConnectThread extends Thread{
@@ -40,9 +41,11 @@ public class ConnectThread extends Thread{
 				OutputStream out = s.getOutputStream();
 				DataOutputStream dout = new DataOutputStream(out);
 				DataInputStream din = new DataInputStream(in); 
+				
 				dout.writeUTF(Main.HASH_ID);
 				dout.flush();
 				System.out.println("hash id sent!");
+				in.read();
 				try {
 		            FileReader reader = new FileReader(file);
 		            BufferedReader bufferedReader = new BufferedReader(reader);
@@ -70,11 +73,15 @@ public class ConnectThread extends Thread{
 					if(NotificationThread.fcm_token != null){
 						NotificationThread.readyForNotifs = true;
 					}
+					int i;
 					while(true){
-					int i = in.read();
-					if( i == 0) break;
+					i = in.read();
 					System.out.println("go ahead and create message thread  int recvd is 0 or not" + i);
+					if( i == 0 | i == 3) break;
+		
 					}
+					if(i == 3)
+						continue;
 					// TODO: if anything other than 0 is recvd then system is under attack
 				}else{
 					//During Setup-Phase store the username and password
@@ -110,24 +117,40 @@ public class ConnectThread extends Thread{
 				msg = new MessageThread();
 				msg.start();
 				System.out.println("..................Messsage thread started");
-				
-				while(!end){
-					//in.read();
+				s.setSoTimeout(12000);
+				/*while(!end){
+					int p = in.read();
+					if(p == -1)
+						break;
 					out.write(3);
-					try {
-						Thread.sleep(10000);
+					out.flush();
+					try{
+						Thread.sleep(5000);
 					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}*/
+				while(!end){
+					out.write(3);
+					out.flush();
+					try{
+						Thread.sleep(5000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 
 			} catch (IOException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.out.println("connect thread....sys disconnected");
 				msg.end();
 				try {
 					s.close();
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					//e1.printStackTrace();
+					System.out.println("connect thread....s not closing");
 				}
 			} 
 		}
