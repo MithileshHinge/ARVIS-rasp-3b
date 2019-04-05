@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -28,7 +29,7 @@ public class SendingAudio extends Thread{
 	static AudioInputStream ais;
 	static AudioFormat format;
 	
-	//static int PORT_AUDIO_UDP = 6671;
+	static int PORT_AUDIO_UDP = 6671;
 	static int sampleRate = 44100;                //44100;
 
 	static int PORT_AUDIO_TCP = 6670;
@@ -48,7 +49,7 @@ public class SendingAudio extends Thread{
 			socket = new Socket(servername,PORT_AUDIO_TCP);
 			//dataSocket = new DatagramSocket(PORT_AUDIO_UDP);
 			dataSocket = new DatagramSocket();
-			dataSocket.setSoTimeout(500);
+			dataSocket.setSoTimeout(5000);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -79,7 +80,14 @@ public class SendingAudio extends Thread{
 					continue;
 				}
 				
-				
+				// UDP hole punching
+				byte[] holePunchingBuf = new byte[256];
+				DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(servername), PORT_AUDIO_UDP);
+				for (int i=0; i<10; i++){
+					System.out.println("UDP Hole Punching...");
+					dataSocket.send(holePunchingPacket);
+				}
+
 				
 	            byte[] receiveData = new byte[4096];   ///1280
 	            // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)

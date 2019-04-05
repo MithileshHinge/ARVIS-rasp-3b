@@ -21,18 +21,17 @@ public class SendMail extends Thread {
 	public static boolean sendmail = false;			//controlled from settings on android.
 	public static String sendMailTo;  
 	
-	public static int whichMail;
+	public static volatile int whichMail;
 	
 	public SendMail(){
 		
 	}
 	
-	
 	public void run(){
 	while(true)
 	{
 		try {
-			Thread.sleep(0, 10000);
+			Thread.sleep(10000);
 
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
@@ -40,7 +39,7 @@ public class SendMail extends Thread {
 		//System.out.println("@@@@@@@@@@@@@@@@@@....mail wala thread...@@@@@@@@@");
 		if(sendmail_vdo && sendmail_notif && sendmail)
 		{
-		  System.out.println("######################Sending start zala#################");
+		  System.out.println("######################Sending start zala#################		"+whichMail);
 		  sendmail_vdo = false;
 		  sendmail_notif = false;
 		  // Recipient's email ID needs to be mentioned.
@@ -92,7 +91,7 @@ public class SendMail extends Thread {
 		         message.setSubject("Magic Eye Video");
 
 		         // Now set the actual message
-		         messageBodyPart.setText("Hello!" + '\n' + "This is a video recorded by your Magic Eye System on " + Main.store_file_name + "." + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY"+'\n'+"FOR ANY TYPE OF QUERY CONTACT : +91 8793587391");
+		         messageBodyPart.setText("Hello!" + '\n' + "This is a video recorded by your Magic Eye System on " + Main.store_file_name + "." + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
 
 		         // Set text message part
 		         multipart.addBodyPart(messageBodyPart);
@@ -111,7 +110,18 @@ public class SendMail extends Thread {
 		         message.setSubject("Magic Eye Camera Inactive");
 
 		         // Now set the actual message
-		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the inactivity of your Magic Eye camera" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY"+'\n'+"FOR ANY TYPE OF QUERY CONTACT : +91 8793587391");
+		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the inactivity of your Magic Eye camera" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
+
+		         // Set text message part
+		         multipart.addBodyPart(messageBodyPart);
+	        	 break;
+	        	 
+	         case 3:	// Memory mail
+	        	 // Set Subject: header field
+		         message.setSubject("Magic Eye Memory Alert");
+
+		         // Now set the actual message
+		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the insufficiency of memory space available on your Magic Eye system" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
 
 		         // Set text message part
 		         multipart.addBodyPart(messageBodyPart);

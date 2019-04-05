@@ -19,14 +19,13 @@ public class AudioPlaying extends Thread{
 	@Override
 	public void run() {
 		try {
-			//filePath="//home//pi//Desktop//warning.wav";
-			filePath="C:\\Users\\Sibhali\\Desktop\\Audio\\warning.wav";
+			filePath=Main.ROOT_DIR +"//warning.wav";
 			if(play_alarm){
-				//filePath = "//home//pi//Desktop//siren.wav";
-				filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\siren.wav";
+				filePath = Main.ROOT_DIR +"//siren.wav";
+				//filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\siren.wav";
 			}
 			if(system_ready){
-				filePath = "//home//pi//Desktop//System_ready.wav";
+				filePath = Main.ROOT_DIR + "//System_ready.wav";
 				//filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\System_ready.wav";
 				system_ready=false;
 			}
@@ -45,6 +44,7 @@ public class AudioPlaying extends Thread{
 		    	 play_alarm = false;
 		    	 clip.loop(Clip.LOOP_CONTINUOUSLY);
 		     }else{
+		    	 //System.out.println("+++++++++++++++++++++++Trying to play clip+++++++++++++++++++++++++++++++++++++++++");
 		    	 clip.loop(0);
 		     }
 		     

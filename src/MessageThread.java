@@ -2,6 +2,7 @@ import java.io.IOException;
 //import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 
 public class MessageThread extends Thread{
@@ -29,9 +30,17 @@ public class MessageThread extends Thread{
 	public void run(){
 		while(!end){
 			try{
+				int p;
 				socket = new Socket(servername,port);
+				socket.setSoTimeout(10000);
 				System.out.println("Message thread started!!!!!!");
-				int p = socket.getInputStream().read();
+				try{
+					p = socket.getInputStream().read();
+				}catch(SocketTimeoutException e){
+					e.printStackTrace();
+					socket.close();
+					continue;
+				}
 				AudioPlaying audioPlaying1 = new AudioPlaying();
 
 				switch(p){
@@ -49,10 +58,9 @@ public class MessageThread extends Thread{
 					Main.Surv_Mode=false;
 					Main.checkonce=true;
 					break;
+					
 				case BYTE_EMAIL_NOTIF_ON:
 					SendMail.sendmail = true;
-					Main.sendMail = new SendMail();
-					Main.sendMail.start();
 					System.out.println("......email notif turned ON.....");
 					break;
 
@@ -111,7 +119,7 @@ public class MessageThread extends Thread{
 
 				socket.getOutputStream().write(1);
 				socket.getOutputStream().flush();
-				System.out.println("###################   Message thread acknowledgment sent to server");
+				System.out.println("###################   Message thread acknowledgment sent to server for = "+p);
 
 				socket.close();
 			}catch (IOException e){

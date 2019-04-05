@@ -4,12 +4,21 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.opencv.core.Core;
@@ -21,6 +30,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.video.BackgroundSubtractorMOG2;
@@ -30,24 +40,14 @@ import org.opencv.videoio.VideoWriter;
 
 public class Main {
 
-	//static boolean LightChange = false;
-    //static int h;
-    //static int w;
-    //static int grid_bc = 0;
-    //static int blk_grid = 0;
-    //static int grid_length = 0;
-    //static int itr = 0;
-	
 	private static CascadeClassifier frontal_face_cascade;
 	private static CascadeClassifier mouthCascade;
 	static int frame_no = 0;
 	private static boolean detectFace = true;
 	private static boolean faceNotCovered = false;
-	
-	public static final String outputFilename = "//home//pi//arvis//videos//";
-	public static final String outputFilename4android = "//home//pi//arvis//videos4android//";
-	/*public static final String outputFilename = "C://Users//Sibhali//Desktop//videos//";
-	public static final String outputFilename4android = "C://Users//Sibhali//Desktop//videos4android//";*/
+	public static String ROOT_DIR = "";
+	public static String outputFilename = "";
+	public static String outputFilename4android = "";
 	public static VideoWriter writer;
 	public static boolean startStoring = true;
 	public static long startTime;
@@ -59,16 +59,17 @@ public class Main {
 	public static String store_file_name;
 	static OutputStream out;
 	public static int myNotifId = 1;
-	
+
 	public static final byte 
-		BYTE_FACEFOUND_VDOGENERATING = 1, 
-		BYTE_FACEFOUND_VDOGENERATED = 2, 
-		BYTE_ALERT1 = 3, 
-		BYTE_ALERT2 = 4, 
-		BYTE_ABRUPT_END = 5, 
-		BYTE_LIGHT_CHANGE = 6,
-		BYTE_CAMERA_INACTIVE = 7;
-	
+	BYTE_FACEFOUND_VDOGENERATING = 1, 
+	BYTE_FACEFOUND_VDOGENERATED = 2, 
+	BYTE_ALERT1 = 3, 
+	BYTE_ALERT2 = 4, 
+	BYTE_ABRUPT_END = 5, 
+	BYTE_LIGHT_CHANGE = 6,
+	BYTE_CAMERA_INACTIVE = 7,
+	BYTE_MEMORY_ALERT = 8;
+
 	public static VideoWriter writer4android;
 	public static boolean writer_close4android = false;
 	public static String store_name4android;
@@ -81,21 +82,22 @@ public class Main {
 	public static boolean checkonce =true;
 	public static Process proc;
 	//Disable auto focus of camera through terminal
-	
+
 	public static boolean alert2given = false;
 	public static boolean alert1given = false;
-	public static int framesRead = 0;
-	
+	public static volatile int framesRead = 0;
+
 	public static boolean Surv_Mode=true;
-	//public static String fourcc = "X264";    /linux environ
-	public static String fourcc = "XVID";
+	public static String fourcc = "X264";    //linux environ
+	//public static String fourcc = "XVID";
 	public volatile static ConcurrentHashMap<Integer, String> notifId2filepaths = new ConcurrentHashMap<>();
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	public static final String servername = "192.168.1.104";
+	//public static String servername = "13.233.111.181";
+	public static final String servername = "13.232.140.141";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
-	public static final String HASH_ID = "xx";
+	public static String HASH_ID;
 	public static String username, password;
 	public static NotificationThread notifThread;
 	public static SendingVideo sendingVideo;
@@ -105,15 +107,57 @@ public class Main {
 	*/
 	public static int contoursCheck = 0;
 	public static Mat saveImage;
+
+	public static ArrayList<Mat> past5frames;
+	public static DetectPerson detectPerson;
+	public static int lightChangeVerified;
+	public static long lightChangeDecisionOutdatedTimer;
+
+	public static boolean flagRecordingStarted = false;
+	static long recordingTimeStart, currentRecordingTime;
+
+	public static final int FRAMES_TO_LEARN = 60;
+	public static int blackCountPercent_to_write=0;
+	public static int blackCountThres;
+	public static int systemNormalCountdown = 0;
+
+	public static boolean systemStagnantcheck = true;
+	static long stagnantStart;
+	public static String configFile = "/home/pi/Desktop/config.txt";
+
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
-	
-	public static void main(String[] args) {
+
+	public static void main(String[] args) throws Exception {
+		//Thread.sleep(30000);
+		if (args.length >0)
+			configFile = args[0];
+		getConfig(configFile);
+		resetAutoExp();
 		startProgram();
-		
+
 	}
-	
+
+	public static void getConfig(String configFile) throws FileNotFoundException{
+		//File config = new File("C://Users//Home//Desktop//config.txt");
+		File config = new File(configFile);
+		Scanner scnr = new Scanner(config);
+		//Reading each line of file using Scanner class
+		
+		HASH_ID = scnr.nextLine();
+		
+		ROOT_DIR = scnr.nextLine();
+		System.out.println(ROOT_DIR);
+		outputFilename = ROOT_DIR + "//videos//";
+		outputFilename4android = ROOT_DIR + "//videos4android//";
+		
+		String ThresVal = scnr.nextLine();
+		scnr.close();
+		blackCountThres = Integer.parseInt(ThresVal);
+		
+		}
+
 	public static MatOfRect detect(Mat inputframe) {
 		faceNotCovered=false;
 		Mat mRgba = new Mat();
@@ -126,50 +170,50 @@ public class Main {
 		Imgproc.equalizeHist(mGrey, mGrey);
 		frontal_face_cascade.detectMultiScale(mGrey, front_faces, 1.1, 3, 0, new Size(30, 30), new Size());
 
-		
+
 		Rect[] facesArray = front_faces.toArray();
 
-    	for (int i = 0; i < facesArray.length; i++) {
-    	    Point centre1 = new Point(facesArray[i].x + facesArray[i].width * 0.5,facesArray[i].y + facesArray[i].height * 0.5);
-    	    //Core.ellipse(mRgba, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
-    	    //Core.ellipse(front_faces, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
-    	    Mat faceROI = mGrey.submat(facesArray[i]);
-    	    MatOfRect mouth = new MatOfRect();
+		for (int i = 0; i < facesArray.length; i++) {
+			Point centre1 = new Point(facesArray[i].x + facesArray[i].width * 0.5,facesArray[i].y + facesArray[i].height * 0.5);
+			//Core.ellipse(mRgba, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
+			//Core.ellipse(front_faces, centre1, new Size(facesArray[i].width * 0.5, facesArray[i].height * 0.5), 0, 0, 360,new Scalar(192, 202, 235), 4, 8, 0);
+			Mat faceROI = mGrey.submat(facesArray[i]);
+			MatOfRect mouth = new MatOfRect();
 
-    	    //mouthCascade.detectMultiScale(faceROI, mouth, 1.1, 2, 0, new Size(30, 30), new Size());
-    	    mouthCascade.detectMultiScale(faceROI, mouth);
-    	    Rect[] mouthArray = mouth.toArray();
+			//mouthCascade.detectMultiScale(faceROI, mouth, 1.1, 2, 0, new Size(30, 30), new Size());
+			mouthCascade.detectMultiScale(faceROI, mouth);
+			Rect[] mouthArray = mouth.toArray();
 
-    	    for (int k = 0 ; k < mouthArray.length; k++) {
-    	        Point centre3 = new Point(facesArray[i].x + mouthArray[k].x + mouthArray[k].width * 0.5,
-    	                facesArray[i].y + mouthArray[k].y + mouthArray[k].height * 0.5);
-    	        if (centre3.y > centre1.y ){
-    	        	faceNotCovered=true;
-    	        //Core.ellipse(mRgba, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
-    	        //Core.ellipse(front_faces, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
-    	        //System.out.println(String.format("Detected %s Mouth(s)", mouth.toArray().length));
-    	        }
-    	    }
-    	    if(faceNotCovered){
-    	    	System.out.println(String.format("Detected %s face(s)", front_faces.toArray().length));
-    	    	//FacenotCovered=false;
-    	    }else{
-    	    	System.out.println(String.format("Detected people = 0"));
-    	    	//break;                                                                    ///add break for multiple faces or else no need	
-    	    }
-    	}
-    	return front_faces;
-    	//return mRgba;
-	}
-	
-	public static Mat bufferedImageToMat(BufferedImage bi) {
-		  Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
-		  byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
-		  mat.put(0, 0, data);
-		  return mat;
+			for (int k = 0 ; k < mouthArray.length; k++) {
+				Point centre3 = new Point(facesArray[i].x + mouthArray[k].x + mouthArray[k].width * 0.5,
+						facesArray[i].y + mouthArray[k].y + mouthArray[k].height * 0.5);
+				if (centre3.y > centre1.y ){
+					faceNotCovered=true;
+					//Core.ellipse(mRgba, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
+					//Core.ellipse(front_faces, centre3, new Size(mouthArray[k].width * 0.5, mouthArray[k].height * 0.5), 0, 0, 360,new Scalar(177, 138, 255), 4, 8, 0);
+					//System.out.println(String.format("Detected %s Mouth(s)", mouth.toArray().length));
+				}
+			}
+			if(faceNotCovered){
+				System.out.println(String.format("Detected %s face(s)", front_faces.toArray().length));
+				//FacenotCovered=false;
+			}else{
+				System.out.println(String.format("Detected people = 0"));
+				//break;                                                                    ///add break for multiple faces or else no need	
+			}
 		}
-	
-	private static BufferedImage matToBufferedImage(Mat frame) {
+		return front_faces;
+		//return mRgba;
+	}
+
+	public static Mat bufferedImageToMat(BufferedImage bi) {
+		Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
+		byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+		mat.put(0, 0, data);
+		return mat;
+	}
+
+	public static BufferedImage matToBufferedImage(Mat frame) {
 		int type = 0;
 		if (frame.channels() == 1) {
 			type = BufferedImage.TYPE_BYTE_GRAY;
@@ -182,150 +226,159 @@ public class Main {
 		byte[] data = dataBuffer.getData();
 		frame.get(0, 0, data);
 		return image;
-		
+
 	}
 	private static BufferedImage timestampIt(BufferedImage toEdit){
 		BufferedImage dest = new BufferedImage(toEdit.getWidth(), toEdit.getHeight(),  BufferedImage.TYPE_3BYTE_BGR);
-		
-	    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	    String dateTime = sdf.format(Calendar.getInstance().getTime()); // reading local time in the system
-	    
-	    Graphics2D g2 = dest.createGraphics();
-	    //Color darkgreen= new Color(28,89,71);
-	    Color darkgreen= new Color(0,0,0);
-	    g2.drawImage(toEdit, 0, 0, toEdit.getWidth(), toEdit.getHeight(), null);
-	    g2.setColor(darkgreen);
-	    g2.setFont(new Font("TimesRoman", Font.PLAIN, 25)); 
-	    g2.drawString(dateTime, 350, 450);
-	    return dest;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String dateTime = sdf.format(Calendar.getInstance().getTime()) + " "+blackCountPercent_to_write; // reading local time in the system
+
+		Graphics2D g2 = dest.createGraphics();
+		//Color darkgreen= new Color(28,89,71);
+		Color darkgreen= new Color(255,255,255);
+		g2.drawImage(toEdit, 0, 0, toEdit.getWidth(), toEdit.getHeight(), null);
+		g2.setColor(darkgreen);
+		g2.setFont(new Font("TimesRoman", Font.PLAIN, 25)); 
+
+		g2.drawString(dateTime, 350, 450);
+		return dest;
 	}
-	
-	private static int CalcContours(Mat frame){
-		//Mat imageBlurr = new Mat();
-		//Imgproc.GaussianBlur(fgMask, imageBlurr, new Size(3,3), 0);
-		Imgproc.medianBlur(frame, frame, 9);
-		//frame=imageBlurr;
-		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();    
-	    Imgproc.findContours(frame, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-	    //System.out.println("Contours = " + contours.size());
-	    for (int i = 0; i < contours.size(); i++) {
-	    	if(contours.size()<2) break;
-	    	Imgproc.drawContours(frame, contours, 1, new Scalar(0,0,255));
-	    }
-	    return contours.size();
-	}
-	
-	
-	public static void startProgram(){
-		
+
+	public static void startProgram() throws Exception{
+
 		frame_no = 0;
 		detectFace = true;
 		faceNotCovered = false;
-		
+
 		startStoring = true;
 		writer_close = false;
 		myNotifId = 1;
-		
+
 		writer_close4android = false;
-		once =false;
 		timeAndroidVdoStarted = -1;
 		j = true;
-		checkonce =true;
-		
+		checkonce = true;
+
 		//Disable auto focus of camera through terminal
-		
+
 		alert2given = false;
 		alert1given = false;
 		framesRead = 0;
-		
-		Surv_Mode=true;
+
 		notifId2filepaths = new ConcurrentHashMap<>();
 		give_system_ready_once = true;
-		
+
+		past5frames = new ArrayList<Mat>(5);
+		lightChangeVerified = 0;
+
+
 		notifThread = new NotificationThread();
+		notifThread.start();
 		//sendingVideo = new SendingVideo();
-		
+
 		ConnectThread connThread = new ConnectThread();
 		connThread.start();
-		
-		
+
+		CheckSpace checkSpace = new CheckSpace();
+		checkSpace.start();
 		//sendingFrame = new SendingFrame();
 		//sendingFrame.start();
-		
+
 		//SendingAudio audio = new SendingAudio();
 		//audio.start();
-		
+
 		//SendingVideo sendingVideo = new SendingVideo(notifId2filepaths);
 		//sendingVideo.start();
-		
-		
+
+
 		//notifThread.start();
-		
+
 		SendMail t3 = new SendMail();
 		t3.start();
-		
+
 		AudioPlaying audioPlaying = new AudioPlaying();
-		
+
 		VideoCapture capture = new VideoCapture(0);
 		if (!capture.isOpened()) {
-			System.out.println("Error - cannot open camera!");
+			System.out.println("Error - cannot open camera! 0 ");
+			/*capture = new VideoCapture(1);
+			if(!capture.isOpened()){
+				System.out.println("Error - cannot open camera! 1 ");
+				return;
+			}*/
 			return;
 		}
-		
-		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(333, 16, false);
-		
-		
-		frontal_face_cascade = new CascadeClassifier("//home//pi//arvis//haarcascades//haarcascade_frontalface_alt.xml");
-		mouthCascade = new CascadeClassifier("//home//pi//arvis//haarcascades//Mouth.xml");
-		
-		/*frontal_face_cascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\haarcascade_frontalface_alt.xml");
-		mouthCascade = new CascadeClassifier("C:\\Users\\Sibhali\\Desktop\\haarcascades\\Mouth.xml");*/
+
+		BackgroundSubtractorMOG2 backgroundSubtractorMOG = Video.createBackgroundSubtractorMOG2(FRAMES_TO_LEARN, 16, false);
+
+
+		frontal_face_cascade = new CascadeClassifier(ROOT_DIR + "//haarcascades//haarcascade_frontalface_alt.xml");
+		mouthCascade = new CascadeClassifier(ROOT_DIR + "//haarcascades//Mouth.xml");
+
 		if (frontal_face_cascade.empty()) {
 			System.out.println("--(!)Error loading Front Face Cascade\n");
 			return;
 		} else System.out.println("Front Face classifier loaded");
-		
+
 		if(mouthCascade.empty()){
 			System.out.println("--(!)Error loading Mouth Cascade\n");
 			return;
 		}else System.out.println("Mouth classifier loaded");
-		
-		
-		
+
+
+
 		int faceDetectionsCounter = 0;
 		boolean noFaceAlert = true;
 		Mat blackFrame = Mat.zeros(480, 640, CvType.CV_8UC1);
 
 		while(true){
 			timeNow1 = System.currentTimeMillis();
+			
 			Mat camImage = new Mat();
 			capture.read(camImage);
 			if (camImage.empty()){
 				System.out.println(" --(!) No captured frame -- Break!");
-			
+				
+				if (writer != null){
+					if(writer.isOpened()){
+						writer.release();
+						System.out.println("writer has been closed #chillax.........when camera disconnected!!");
+					}
+				}
+				if (writer4android != null){
+					if(writer4android.isOpened()){
+						writer4android.release();
+						System.out.println("writer4android has been closed #chillax............when camera disconnected!!!");
+					}
+				}
+				
 				// Send notif that camera is off
 				System.out.println(".....cameraInactive alert......");
 				notifThread.p = BYTE_CAMERA_INACTIVE;
 				notifThread.myNotifId = myNotifId;
 				System.out.println("value of notifId is " + myNotifId);
 				notifThread.sendNotif = true;
-				
+				if(myNotifId < 99)
+					myNotifId++;
+				else
+					myNotifId = 1;
+
 				// Send mail that camera is off
 				SendMail.sendmail_notif = true;
 				SendMail.sendmail_vdo = true;
 				SendMail.sendmail = true;
 				SendMail.whichMail = 2;
-				
+				System.out.println(".............Main: whichMail = "+SendMail.whichMail);
 				// Sound a warning alarm that camera is disconnected
-				
+
 				return;
 			}
 
-			//Send frame via live-feed
-			BufferedImage cam_img = matToBufferedImage(camImage);
-			BufferedImage camimg = timestampIt(cam_img);
-			sendingFrame.frame = camimg;
-			
+			//add to frame buffer (for light change)
+			past5frames.add(camImage);
+			if (past5frames.size() > 5)
+				past5frames.remove(0);
+
 			if (!Surv_Mode && checkonce){
 				System.out.println("..........................recording started...................................");
 				time3 = System.currentTimeMillis();
@@ -341,19 +394,23 @@ public class Main {
 				//saveImage=bufferedImageToMat(camimg);
 				//writer.write(saveImage);
 				System.out.println("writing image into video file !surv");
-				writer.write(camImage);
+				if (writer != null){
+					if(writer.isOpened()){
+						writer.write(camImage);
+					}
+				}
 				//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 			}
-			
+
 			//Background subtraction without learning background
 			Mat fgMask = new Mat();
 			Mat frameRef = new Mat();
-			
+
 			if (j) {
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
 				j = false;
 			}else backgroundSubtractorMOG.apply(camImage, fgMask, 0);
-			
+
 			//Calculate black percentage
 			byte[] buff = new byte[(int) (fgMask.total() * fgMask.channels())];
 			fgMask.get(0, 0, buff);
@@ -367,24 +424,37 @@ public class Main {
 			//System.out.println("" + (blackCountPercent) + "%");
 			Mat output = new Mat();
 			camImage.copyTo(output, fgMask);
-			
+
+			//Send frame via live-feed
+			BufferedImage cam_img = matToBufferedImage(camImage);
+			BufferedImage camimg = timestampIt(cam_img);
+			sendingFrame.frame = camimg;
+
 			//Get the number of contours
-			int noOfContours = CalcContours(fgMask);
+			//int noOfContours = CalcContours(fgMask);
 			//System.out.println("Contours = " + noOfContours + " BlackCountPercentage = " + blackCountPercent + "%");
-			System.out.println(blackCountPercent+"%");
-			
+			Date logDateTime = new Date();
+			System.out.println(ft.format(logDateTime) + ": " + blackCountPercent+"%");
+			blackCountPercent_to_write = blackCountPercent;
 			//To give system is ready
-			if(framesRead==200 && give_system_ready_once){
+			if(framesRead==(FRAMES_TO_LEARN - 5) && give_system_ready_once){
 				give_system_ready_once = false;
 				System.out.println("SYSTEM is Ready");
 				audioPlaying.system_ready=true;
 				audioPlaying.start();
 			}
-			//Consider background change if black % is less that 90
-			if (blackCountPercent < 90 && framesRead > 100) {
-				
+			//Consider background change if black % is less than blackCountThres
+			if (blackCountPercent < blackCountThres && framesRead >= FRAMES_TO_LEARN) {
+
+				systemNormalCountdown = 0;
+				if(flagRecordingStarted){
+					currentRecordingTime = System.currentTimeMillis();
+					System.out.println("current Recording time updated:     " + currentRecordingTime);
+				}
 				//Start recording video just after bg changes
 				if (startStoring && Surv_Mode){
+					flagRecordingStarted = true;
+					recordingTimeStart = System.currentTimeMillis();
 					System.out.println("..........................recording started...................................");
 					time3 = System.currentTimeMillis();
 					store_name = outputFilename + ft.format(dNow) + ".mp4";
@@ -397,15 +467,72 @@ public class Main {
 					startTime = System.nanoTime();
 					writer_close = true;
 					startStoring = false;
-					
+
 				}
 				
+				if (blackCountPercent < 70 && lightChangeVerified == 0){
+					//maybe light change, verify:
+					System.out.println("Verifying light change:::-----");
+					Mat camImageGray = new Mat();
+					Imgproc.cvtColor(camImage, camImageGray, Imgproc.COLOR_BGR2GRAY);
+					Mat camImageGrayInitial = new Mat();
+					Imgproc.cvtColor(past5frames.get(2), camImageGrayInitial, Imgproc.COLOR_BGR2GRAY);
+					final int patchSize = 40;
+					final double changeThresh = 5;
+					final double numBlocksThreshPercent = 0.7;
+					int changedBlocks = 0;
+
+					for (int i=0; i<camImageGray.rows()/patchSize; i++){
+						for (int j=0; j<camImageGray.cols()/patchSize; j++){
+							Mat patch1 = camImageGray.submat(i*patchSize, (i+1)*patchSize, j*patchSize, (j+1)*patchSize);
+							Mat patch2 = camImageGrayInitial.submat(i*patchSize, (i+1)*patchSize, j*patchSize, (j+1)*patchSize);
+
+							Scalar mean1 = Core.mean(patch1);
+							Scalar mean2 = Core.mean(patch2);
+
+							System.out.println(mean1.val[0] + ", " + mean2.val[0] + "," + Math.abs(mean1.val[0] - mean2.val[0]));
+							if (Math.abs(mean1.val[0] - mean2.val[0]) > changeThresh){
+								changedBlocks++;
+							}
+						}
+					}
+
+					if (changedBlocks > numBlocksThreshPercent * (camImage.rows()/patchSize * camImage.cols()/patchSize)){
+						// Lights have changed, now check if there is a person to determine whether to learn
+						System.out.println("Light change verified true.............");
+						lightChangeVerified = 1;
+						/*detectPerson = new DetectPerson();
+						detectPerson.past5frames.addAll(past5frames);						
+						detectPerson.start();
+						*/
+						framesRead=0;
+						resetAutoExp();
+						notifThread.p = BYTE_LIGHT_CHANGE;
+						notifThread.myNotifId = myNotifId;
+						notifThread.sendNotif = true;
+					}else {
+						// Lights have not changed, continue as it is
+						System.out.println("Light change verified false...........");
+						lightChangeVerified = -1;
+						lightChangeDecisionOutdatedTimer = System.currentTimeMillis();
+					}
+				}
+
+				if (lightChangeVerified == -1 && (System.currentTimeMillis() - lightChangeDecisionOutdatedTimer)/1000 > 5*60){ //recheck light change after 5 mins
+					lightChangeVerified = 0;
+				}
+
+
 				//Write frame to video only when surveillance mode is ON
 				if(Surv_Mode){
 					//saveImage=bufferedImageToMat(camimg);
 					//writer.write(saveImage);
 					//System.out.println("writing image into video file");
-					writer.write(camImage);
+					if (writer != null){
+						if(writer.isOpened()){
+							writer.write(bufferedImageToMat(camimg));
+						}
+					}
 					//writer.encodeVideo(0, camimg, System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 				}
 				//If writer4android is open, write frame to android video also
@@ -418,22 +545,29 @@ public class Main {
 							notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 							notifThread.myNotifId = myNotifId;
 							notifThread.sendNotif = true;
-							myNotifId++;
+							if(myNotifId < 99)
+								myNotifId++;
+							else
+								myNotifId = 1;
 						}else {
 							saveImage=bufferedImageToMat(camimg);
-							writer4android.write(saveImage);
+							if (writer4android != null){
+								if(writer4android.isOpened()){
+									writer4android.write(saveImage);
+								}
+							}
 							//writer4android.write(camImage);
 							//writer4android.encodeVideo(0, camimg, System.nanoTime() - startTime4android, TimeUnit.NANOSECONDS);
 						}
 					}
 				}
 				frame_no++;
-				
+
 				//Detect face every 3rd frame
 				if (detectFace && frame_no==3){
 					frame_no=0;
 					System.out.println("Face Detecting now!");
-					
+
 					MatOfRect front_faces = detect(output);
 					Mat outputFaces = new Mat();
 					output.copyTo(outputFaces);
@@ -443,18 +577,18 @@ public class Main {
 						Imgproc.ellipse(camImage, center, new Size(rect.width * 0.5, rect.height * 0.5), 0, 0, 360,
 								new Scalar(0, 255, 0), 4, 8, 0);
 					}
-					
-					
+
+
 					if (front_faces.toArray().length > 0 && faceNotCovered){
 						faceDetectionsCounter++;
-						
+
 						//Consider face detected if detected more than twice
 						if (faceDetectionsCounter >= 3){
 							faceDetectionsCounter = 0;
 							noFaceAlert = false;
 							detectFace = false;
 							SendMail.sendmail_notif=true;
-							
+
 							//If alert1 is not given, then start storing video4android | else, close the writer
 							if (!alert1given){
 								notifThread.notifFrame = camimg;
@@ -462,7 +596,7 @@ public class Main {
 								notifThread.myNotifId = myNotifId;
 								System.out.println("value of notifId is " + myNotifId);
 								notifThread.sendNotif = true;
-								
+
 								store_name4android = outputFilename4android + ft.format(dNow) + ".mp4";
 								store_activityname = ft.format(dNow);
 								//writer4android = ToolFactory.makeWriter(store_name4android);
@@ -470,32 +604,35 @@ public class Main {
 								writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
 								startTime4android = System.nanoTime();
 								timeAndroidVdoStarted = System.currentTimeMillis();
-								
+
 							}else {
 								writer4android.release();
 								notifId2filepaths.put(new Integer(myNotifId), store_name4android);
 								notifThread.sendNotif = true;
 								notifThread.p = BYTE_FACEFOUND_VDOGENERATED;
 								notifThread.myNotifId = myNotifId;
-								myNotifId++;
+								if(myNotifId < 99)
+									myNotifId++;
+								else
+									myNotifId = 1;
 							}
 						}
 					}
 				}
-				
-				
+
+
 				//Give alert1 and start writer4android
-				if (noFaceAlert && !alert1given && blackCountPercent<85 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
+				if (noFaceAlert && !alert1given && blackCountPercent<93 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
 					alert1given = true;
 					System.out.println("warn level 1.......................");
-					
+
 					notifThread.notifFrame = camimg;
 					notifThread.p = BYTE_ALERT1;
 					notifThread.myNotifId = myNotifId;
 					notifThread.sendNotif = true;
 					System.out.println("alert level 1 value of notifId is " + myNotifId);
-					
-					
+
+
 					store_name4android = outputFilename4android + ft.format(dNow) + ".mp4";
 					store_activityname = ft.format(dNow);
 					writer4android = new VideoWriter(store_name4android, VideoWriter.fourcc( fourcc.charAt(0), fourcc.charAt(1), fourcc.charAt(2), fourcc.charAt(3)), 20, new Size(640,480), true);
@@ -504,11 +641,11 @@ public class Main {
 					startTime4android = System.nanoTime();
 					time3 = System.currentTimeMillis();
 					timeAndroidVdoStarted = -1;
-					
+
 					//AudioPlaying audioPlaying = new AudioPlaying();
 					//audioPlaying.start();
 				}
-				
+
 				//Give alert2 and close writer4android
 				if ((time4 - time3)/1000 > 15 && noFaceAlert && alert1given && !alert2given){
 					alert2given = true;
@@ -519,13 +656,16 @@ public class Main {
 					notifThread.p = BYTE_ALERT2;
 					notifThread.myNotifId = myNotifId;
 					System.out.println("alert level 2 value of notifId is " + myNotifId);
-					myNotifId++;
+					if(myNotifId < 99)
+						myNotifId++;
+					else
+						myNotifId = 1;
 					noFaceAlert = false;
 					detectFace = false;
 					SendMail.sendmail_notif = true;
 					System.out.println("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
 				}
-				
+
 				/*//Check for Illumination change
 				//if(notifThread.p == BYTE_FACEFOUND_VDOGENERATING | notifThread.p == BYTE_FACEFOUND_VDOGENERATED){
 					int contoursPerPercentChange = 0;
@@ -544,18 +684,57 @@ public class Main {
 						framesRead = 10;
 					}
 			//	}
-			*/
-				
-				
+				 */
+
+
 			}else {
+				
+				if(systemNormalCountdown<8){
+					systemNormalCountdown++;
+				}else {
+					if(System.currentTimeMillis() - stagnantStart > 1000*3600){
+						stagnantStart = System.currentTimeMillis();
+						framesRead = 0;
+						resetAutoExp();
+						System.out.println("System stagnant for 1 hr!!!  Resetting exposure.....");
+					}
+
+					System.out.println("Flag recording false......");
+					flagRecordingStarted = false;
+					startStoring = true;
+					//Writer close once bg becomes normal
+					if (writer_close ){
+						stagnantStart = System.currentTimeMillis();
+						if (writer != null){
+							if(writer.isOpened()){
+								writer.release();
+								System.out.println("writer has been closed #chillax");
+							}
+						}
+						//writer.close();                               see if this can be used directly
+						writer_close = false; 
+						alert1given = false;
+						alert2given = false;
+						noFaceAlert = true;
+						timeAndroidVdoStarted = -1;
+						SendMail.whichMail = 1;
+						SendMail.sendmail_vdo = true;
+						System.out.println(".............Main2: whichMail = "+SendMail.whichMail);
+						System.out.println(".............Main2: sendMail vdo = "+SendMail.sendmail_vdo);
+						System.out.println(".............Main2: sendMail notif = "+SendMail.sendmail_notif);
+						System.out.println(".............Main2: sendMail = "+SendMail.sendmail);
+
+						System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+					}
+
+				}
+				
 				contoursCheck = 0;
 				frameRef = camImage;
-				
 				//LightChange = false;
-				
+
 				dNow = new Date();
-				startStoring = true;
-				
+
 				if(notifThread.p ==BYTE_FACEFOUND_VDOGENERATING || notifThread.p==BYTE_ALERT1){
 					System.out.println("abrupt end...........................");
 					writer4android.release();
@@ -563,52 +742,88 @@ public class Main {
 					notifThread.p = 5;
 					notifThread.myNotifId = myNotifId;
 					notifThread.sendNotif = true;
-					SendMail.sendmail_notif = true;
-					SendMail.sendmail_vdo = true;
-					SendMail.whichMail = 1;
 					System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 					System.out.println("abrupt end value of notifId is " + myNotifId);
-					myNotifId++;
+					if(myNotifId < 99)
+						myNotifId++;
+					else
+						myNotifId = 1;
 				}
-				
-				//Writer close once bg becomes normal
-				if (writer_close){
-					if (writer != null){
-						if(writer.isOpened()){
-							writer.release();
-							System.out.println("writer has been closed #chillax");
-						}
-					}
-					//writer.close();                               see if this can be used directly
-					writer_close = false; 
-					alert1given = false;
-					alert2given = false;
-					noFaceAlert = true;
-					timeAndroidVdoStarted = -1;
-					SendMail.sendmail_vdo = true;
-					System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
-					once = false;
-				}
-				
+
+
 				detectFace = true;
 				faceDetectionsCounter = 0;
 				frame_no = 0;
-				
+
+				lightChangeVerified = 0;
+				if (detectPerson != null){
+					detectPerson.detect = false;
+					detectPerson = null;
+				}
+
 				//apply bgsubtraction while learning background
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
 			}
-			
-			if (framesRead < 110) {
+			System.out.println("total recording time :" + (currentRecordingTime-recordingTimeStart)/1000);
+			if((currentRecordingTime-recordingTimeStart)/60000 > 2){
+				System.out.println("currentRecordingTime :" + currentRecordingTime);
+				System.out.println("recordingTimeStart :" + recordingTimeStart);
+				System.out.println("total recording time :" + (currentRecordingTime-recordingTimeStart)/1000);
+				recordingTimeStart = currentRecordingTime;
+				framesRead = 0;
+				resetAutoExp();
+			}
+			if (framesRead < FRAMES_TO_LEARN) {
 				framesRead++;
-				System.out.println("frmes_read" + framesRead);
+				System.out.println("frmes_read :" + framesRead);
 			}
 			time4 = System.currentTimeMillis();
 			timeNow2 = System.currentTimeMillis();
 			System.out.println("                        time : " + (timeNow2 - timeNow1));
-			
+
 			//System.out.println("frmes_read" + framesRead);
 			timeNow1 = timeNow2;
 		}
 	}
 
+	public static void resetAutoExp(){
+		int retVal = 1;
+		System.out.println("Executing v4l2");
+		while(retVal != 0){
+			try{
+				String[] command = { "v4l2-ctl", "-c", "exposure_auto=3" };
+				ProcessBuilder pb = new ProcessBuilder(command);
+				pb.redirectErrorStream(true);
+				Process proc = pb.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+					System.out.println("v4l2: " + line);
+				retVal = proc.waitFor();
+				System.out.println(retVal);
+				Thread.sleep(700);					
+			}catch (InterruptedException | IOException e1){
+				e1.printStackTrace();
+			}
+		}
+		retVal = 1;
+		System.out.println("......");
+		while(retVal != 0){
+			String[] command2 = { "v4l2-ctl", "-c", "exposure_auto=1" };
+			try {
+
+				ProcessBuilder pb = new ProcessBuilder(command2);
+				pb.redirectErrorStream(true);
+				Process proc = pb.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+				String line;
+				while ((line = reader.readLine()) != null)
+					System.out.println("v4l2: " + line);
+				retVal = proc.waitFor();
+				System.out.println(retVal);
+			} catch (InterruptedException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }
