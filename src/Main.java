@@ -95,7 +95,7 @@ public class Main {
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
 	//public static String servername = "13.233.111.181";
-	public static final String servername = "13.232.140.141";
+	public static final String servername = "13.233.124.57";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
 	public static String HASH_ID;
 	public static String username, password;
