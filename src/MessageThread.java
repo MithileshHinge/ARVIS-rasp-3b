@@ -94,9 +94,12 @@ public class MessageThread extends Thread{
 					break;
 				case BYTE_STOP_ALARM:
 					System.out.println("#########################   Alarm off kela ");
-
-					AudioPlaying.clip.stop();
-					AudioPlaying.clip.close();
+					if(AudioPlaying.clip.isOpen() || AudioPlaying.clip.isActive())
+					{
+						AudioPlaying.clip.stop();
+						AudioPlaying.clip.close();
+					}
+					
 					break;
 				case BYTE_RESTART:
 					System.out.println("######### Program restart");

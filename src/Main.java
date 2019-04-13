@@ -94,8 +94,8 @@ public class Main {
 	private static boolean give_system_ready_once = true;
 	public static SendingFrame sendingFrame;
 	public static SendingAudio sendingAudio;
-	//public static String servername = "13.233.111.181";
-	public static final String servername = "13.232.140.141";
+	public static String servername = "13.233.111.181";
+	//public static final String servername = "13.232.140.141";
 	//public static final String HASH_ID = "2eab13847fe70c2e59dc588f299224aa";
 	public static String HASH_ID;
 	public static String username, password;
@@ -145,6 +145,7 @@ public class Main {
 		Scanner scnr = new Scanner(config);
 		//Reading each line of file using Scanner class
 		
+		servername = scnr.nextLine();
 		HASH_ID = scnr.nextLine();
 		
 		ROOT_DIR = scnr.nextLine();

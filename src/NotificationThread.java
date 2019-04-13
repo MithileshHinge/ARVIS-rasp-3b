@@ -1,120 +1,3 @@
-
-/*import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-
-public class NotificationThread extends Thread {
-	
-	static int port_note = 6667;
-	static ServerSocket serverSocket_note;
-	static Socket socket_note;
-	public static OutputStream out_note;
-	public static InputStream in_note;
-	public static boolean continue_sending = true;
-	
-	public static boolean notify = false;
-	public static boolean warn_level1 = false;
-	public static boolean warn_level2 = false;
-	
-	public static boolean ThreadStopped = true;
-	public static boolean Bg_changed = false;
-	public NotificationThread(){
-		try {
-			serverSocket_note = new ServerSocket(port_note);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println(String.format("problem2"));
-		}
-		
-	}
-	@Override
-	public void run() {
-		while (true) {
-			try {
-				Thread.sleep(0, 10000);
-				
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			if(Bg_changed){
-				
-			}
-			if (notify) {
-				System.out.println("Face is detected......................");
-				//SendMail.sendmail_notif=true;
-				try {
-					Main.alert1given = true;
-					while(continue_sending){
-						socket_note = serverSocket_note.accept();
-						out_note = socket_note.getOutputStream();
-						in_note = socket_note.getInputStream();
-						out_note.write(1);
-						out_note.flush();
-						int p = in_note.read();
-						socket_note.close();
-						if(p==9){
-						continue_sending = false;
-						}
-					}
-						continue_sending = true;
-					 System.out.println(String.format(".....................................................................................connected level 1"));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					System.out.println(String.format("connection_prob2"));
-					e.printStackTrace();
-				}
-				notify = false;
-			}
-			if (warn_level1) {
-				System.out.println("alert level 1...................");
-				try {
-					while(continue_sending){
-						socket_note = serverSocket_note.accept();
-						out_note = socket_note.getOutputStream();
-						in_note = socket_note.getInputStream();
-						out_note.write(2);
-						out_note.flush();
-						int p = in_note.read();
-						socket_note.close();
-						if(p==9){
-						continue_sending = false;
-						}
-					}
-					
-					continue_sending = true;
-					 System.out.println(String.format(".....................................................................................connected level 1"));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					System.out.println(String.format("connection_prob3"));
-					e.printStackTrace();
-				}
-				warn_level1 = false;
-			}
-			if (warn_level2) {
-				System.out.println("alert level 2...................");
-				//SendMail.sendmail_notif=true;
-				try {
-					socket_note = serverSocket_note.accept();
-					out_note = socket_note.getOutputStream();
-					out_note.write(3);
-					out_note.flush();
-					socket_note.close();
-					System.out.println(String.format("..................................................................................connected level 2"));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					System.out.println(String.format("connection_prob4"));
-					e.printStackTrace();
-				}
-				warn_level2 = false;
-			}
-			ThreadStopped = false;
-		}
-	}
-}*/
-
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -130,6 +13,8 @@ import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 
@@ -160,7 +45,7 @@ public class NotificationThread extends Thread {
 	final static private String FCM_URL = "https://fcm.googleapis.com/fcm/send";
 	FileInputStream serviceAccount;
 
-	public NotificationThread() { 
+	public NotificationThread() {
 		try {
 			//serviceAccount = new FileInputStream("F:\\GitHub\\ARVIS-rasp-3b\\arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
 			serviceAccount = new FileInputStream(Main.ROOT_DIR +"//arvis-aws-rasp-3b-firebase-adminsdk-2pzq2-f1b0d0db80.json");
@@ -257,6 +142,9 @@ public class NotificationThread extends Thread {
 			dataJson.put("NotifByte", p);
 			dataJson.put("NotifId", NotifId);
 			dataJson.put("HashId", Main.HASH_ID);
+			long dateTime = System.currentTimeMillis();
+			//long dateTimeLong = Long.parseLong(dateTimeStr);
+			dataJson.put("time", dateTime);
 			System.out.println("..........Prepared 1st notif json object for app");
 			System.out.println("FCM Token : " + fcm_token);
 			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){	
@@ -296,6 +184,7 @@ public class NotificationThread extends Thread {
 			}
 		}catch(MalformedURLException mlfexception){
 			// Protocol Error
+			mlfexception.printStackTrace();
 			System.out.println("Error occurred while sending push Notification!.." + mlfexception.getMessage());
 		}catch(IOException mlfexception){
 			//URL problem
@@ -304,6 +193,7 @@ public class NotificationThread extends Thread {
 			//Message format error
 			System.out.println("Message Format, Error occurred while sending push Notification!.." + jsonexception.getMessage());
 		}catch (Exception exception) {
+			exception.printStackTrace();
 			//General Error or exception.
 			System.out.println("Error occurred while sending push Notification!.." + exception.getMessage());
 		}
