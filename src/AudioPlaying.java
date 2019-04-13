@@ -25,8 +25,7 @@ public class AudioPlaying extends Thread{
 			filePath=Main.ROOT_DIR +"//warning.wav";
 			if(play_alarm){
 				filePath = Main.ROOT_DIR +"//siren.wav";
-				//filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\siren.wav";
-			}
+				}
 			if(system_ready){
 				File noSpeaker = new File(Main.ROOT_DIR + "//noSpeaker.txt");
 				Scanner scnr = new Scanner(noSpeaker);
@@ -38,7 +37,6 @@ public class AudioPlaying extends Thread{
 			    bw.close();
 			    
 				filePath = Main.ROOT_DIR + "//System_ready.wav";
-				//filePath = "C:\\Users\\Sibhali\\Desktop\\Audio\\System_ready.wav";
 				system_ready=false;
 			}
 			 audioInputStream = 
@@ -58,12 +56,10 @@ public class AudioPlaying extends Thread{
 		    	 play_alarm = false;
 		    	 clip.loop(Clip.LOOP_CONTINUOUSLY);
 		     }else{
-		    	 //System.out.println("+++++++++++++++++++++++Trying to play clip+++++++++++++++++++++++++++++++++++++++++");
 		    	 clip.loop(0);
 		     }
 		     
 			} catch (Exception e ) {
-				System.out.println("Error with playing sound.");
 				e.printStackTrace();
 			}
 

@@ -39,7 +39,6 @@ public class SendMail extends Thread {
 		//System.out.println("@@@@@@@@@@@@@@@@@@....mail wala thread...@@@@@@@@@");
 		if(sendmail_vdo && sendmail_notif && sendmail)
 		{
-		  System.out.println("######################Sending start zala#################		"+whichMail);
 		  sendmail_vdo = false;
 		  sendmail_notif = false;
 		  // Recipient's email ID needs to be mentioned.
@@ -130,15 +129,11 @@ public class SendMail extends Thread {
 
 	         // Send the complete message parts
 	         message.setContent(multipart);
-	         System.out.println("reached jst b4 sending");
-
 	         // Send message
 	         Transport.send(message);
 	         
-	         System.out.println("Sent message successfully....");
-	         
+	        
 	      } catch (MessagingException e) {
-	    	 System.out.println("Sending failed!!!");
 	    	 e.printStackTrace();
 	         throw new RuntimeException(e);
 	      }

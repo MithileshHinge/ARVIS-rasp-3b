@@ -7,10 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 
 public class ConnectThread extends Thread{
 	
@@ -20,18 +17,9 @@ public class ConnectThread extends Thread{
 	private Socket s;
 	//MessageThread msgThread;
 	File file = new File(Main.ROOT_DIR , "save_usr_pswd.txt");
-	//File file = new File("save_usr_pswd.txt");
 	MessageThread msg;
 	
 	public void run(){
-		/*InetAddress inetAddress;
-		try {
-			inetAddress = InetAddress.getLocalHost();
-			LocalIP = inetAddress.getHostAddress().toString();
-			System.out.println("LOCAL ADDRESS : " + LocalIP);
-		} catch (UnknownHostException e2) {
-			e2.printStackTrace();
-		}*/
 		while(!end){
 			try {
 				s = new Socket(Main.servername, connectPort);
@@ -44,7 +32,6 @@ public class ConnectThread extends Thread{
 				
 				dout.writeUTF(Main.HASH_ID);
 				dout.flush();
-				System.out.println("hash id sent!");
 				in.read();
 				try {
 		            FileReader reader = new FileReader(file);
@@ -54,12 +41,9 @@ public class ConnectThread extends Thread{
 		         
 		            if((line = bufferedReader.readLine()) != null) {
 		            	Main.username = line;
-		            	System.out.println("username is: " + line);
-		                Main.password = bufferedReader.readLine();
+		            	Main.password = bufferedReader.readLine();
 		                NotificationThread.fcm_token= bufferedReader.readLine();
 		                SendMail.sendMailTo = bufferedReader.readLine();
-		            }else{
-		            	System.out.println("no username password is stored");	
 		            }
 		            reader.close();
 		 
@@ -76,7 +60,6 @@ public class ConnectThread extends Thread{
 					int i;
 					while(true){
 					i = in.read();
-					System.out.println("go ahead and create message thread  int recvd is 0 or not" + i);
 					if( i == 0 | i == 3) break;
 		
 					}
@@ -108,29 +91,14 @@ public class ConnectThread extends Thread{
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-					System.out.println("username recvd: " + Main.username + "      password recvd: " + Main.password);
-					System.out.println("FCM tokem : "+NotificationThread.fcm_token);
-				}
+					}
 				
 				dout.writeUTF(localIP);
 				dout.flush();
 				msg = new MessageThread();
 				msg.start();
-				System.out.println("..................Messsage thread started");
 				s.setSoTimeout(12000);
-				/*while(!end){
-					int p = in.read();
-					if(p == -1)
-						break;
-					out.write(3);
-					out.flush();
-					try{
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}*/
+				
 				while(!end){
 					out.write(3);
 					out.flush();
@@ -144,14 +112,12 @@ public class ConnectThread extends Thread{
 
 			} catch (IOException e) {
 				//e.printStackTrace();
-				System.out.println("connect thread....sys disconnected");
 				msg.end();
 				try {
 					s.close();
 				} catch (IOException e1) {
 					//e1.printStackTrace();
-					System.out.println("connect thread....s not closing");
-				}
+					}
 			} 
 		}
 		msg.end();
