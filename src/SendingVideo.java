@@ -51,7 +51,7 @@ public class SendingVideo extends Thread {
 			
 			int notifId = dIn.readInt();
 			String filepath = Main.notifId2filepaths.get(Integer.valueOf(notifId));
-			System.out.println("filepath = " + filepath);
+			//System.out.println("filepath = " + filepath);
 			String filename = filepath.substring(beginIndex);
 			DataOutputStream dOut = new DataOutputStream(sOut);
 			dOut.writeInt(filename.length());
