@@ -546,6 +546,7 @@ public class Main {
 
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
 			}
+			System.out.println("total recording time :" + (currentRecordingTime-recordingTimeStart)/1000);
 			if((currentRecordingTime-recordingTimeStart)/60000 > 2){
 				recordingTimeStart = currentRecordingTime;
 				framesRead = 0;
@@ -569,7 +570,7 @@ public class Main {
 				Process proc = pb.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 				String line;
-				while ((line = reader.readLine()) != null){}
+				while ((line = reader.readLine()) != null)
 				retVal = proc.waitFor();
 				Thread.sleep(700);					
 			}catch (InterruptedException | IOException e1){
@@ -586,7 +587,7 @@ public class Main {
 				Process proc = pb.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 				String line;
-				while ((line = reader.readLine()) != null){}
+				while ((line = reader.readLine()) != null)
 				retVal = proc.waitFor();
 				System.out.println(retVal);
 			} catch (InterruptedException | IOException e) {

@@ -96,9 +96,9 @@ public class SendingAudio extends Thread{
 	            	try{
 	            		out.write(1);
 	            		out.flush();
-	            		//System.out.println("....receiving packets.....");
+	            		System.out.println("....receiving packets.....");
 	            		dataSocket.receive(receivePacket);
-	            		//System.out.println("....receiving packets for initial buffer.....");
+	            		System.out.println("....receiving packets for initial buffer.....");
 	            		//if (fin.read(receiveData) == -1) break;
 	            		
 	            		initialBuf.write(receivePacket.getData());
