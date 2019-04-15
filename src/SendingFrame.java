@@ -22,7 +22,8 @@ public class SendingFrame extends Thread {
 
     public void run() {
     	
-		 try {
+		System.out.println("!!!!!!!!!!! LIVEFEED STARTED  !!!!!!!!!!");
+        try {
         	socket = new Socket(servername,PORT_LIVEFEED_TCP);
             udpSocket = new DatagramSocket();
         } catch (IOException e1) {
@@ -41,19 +42,14 @@ public class SendingFrame extends Thread {
 	            if (frame == null) continue;
 	            ImageIO.write(frame, "jpg", baos);
 	            byte[] buf = baos.toByteArray();
+	            System.out.println("buff size" + buf.length);
+	            
 	            InetAddress serverAddress = InetAddress.getByName(servername);
 	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, serverAddress, PORT_LIVEFEED_UDP);
 	            udpSocket.send(imgPacket);
 
         	} catch (IOException e) {
         		e.printStackTrace();
-        		if(AudioPlaying.clip!= null){
-        		if(AudioPlaying.clip.isOpen() || AudioPlaying.clip.isActive())
-				{
-					AudioPlaying.clip.stop();
-					AudioPlaying.clip.close();
-				}
-        		}
         		break;
         	}
 

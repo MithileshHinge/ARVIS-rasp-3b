@@ -18,8 +18,11 @@ public class CheckSpace extends Thread {
 		String freespacestring = Long.toString(rootDir.getFreeSpace()/1073741824);
 		int freespace  = Integer.parseInt(freespacestring);
 		double freeSpacePercent =((double)freespace/(double)totalspace)*100;
+		System.out.println("freespace : " + freeSpacePercent);
+		
 		if (freeSpacePercent < 11){
 			//give notif		
+			System.out.println(".......................freeSpacePercent < 10");
 			Main.notifThread.p = Main.BYTE_MEMORY_ALERT;
 			Main.notifThread.memoryLeft = 90;
 			
@@ -29,6 +32,7 @@ public class CheckSpace extends Thread {
 				
 			}
 			Main.notifThread.myNotifId = Main.myNotifId;
+			System.out.println("value of notifId is " + Main.myNotifId);
 			if(notifyOnce){
 				notifyOnce = false;
 				Main.notifThread.sendNotif = true;
@@ -41,6 +45,7 @@ public class CheckSpace extends Thread {
 				SendMail.sendmail_vdo = true;
 				SendMail.sendmail = true;
 				SendMail.whichMail = 3;
+				System.out.println(".............CS: whichMail = "+SendMail.whichMail);
 			}
 
 		}
@@ -76,6 +81,7 @@ public class CheckSpace extends Thread {
 
 
 		try {
+			System.out.println("checkTime : "  + checkTime);
 			Thread.sleep(checkTime);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
