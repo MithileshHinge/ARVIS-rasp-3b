@@ -18,7 +18,7 @@ import javax.mail.internet.MimeMultipart;
 public class SendMail extends Thread {
 	public static boolean sendmail_vdo=false;
 	public static boolean sendmail_notif=false;		
-	public static boolean sendmail = true;			//controlled from settings on android.
+	public static boolean sendmail = false;			//controlled from settings on android.
 	public static String sendMailTo;  
 	
 	public static volatile int whichMail;
@@ -26,7 +26,6 @@ public class SendMail extends Thread {
 	public SendMail(){
 		
 	}
-	
 	
 	public void run(){
 	while(true)
@@ -92,7 +91,7 @@ public class SendMail extends Thread {
 		         message.setSubject("Magic Eye Video");
 
 		         // Now set the actual message
-		         messageBodyPart.setText("Hello!" + '\n' + "This is a video recorded by your Magic Eye System on " + Main.store_file_name + "." + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY"+'\n'+"FOR ANY TYPE OF QUERY CONTACT : +91 8793587391");
+		         messageBodyPart.setText("Hello!" + '\n' + "This is a video recorded by your Magic Eye System on " + Main.store_file_name + "." + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
 
 		         // Set text message part
 		         multipart.addBodyPart(messageBodyPart);
@@ -111,7 +110,7 @@ public class SendMail extends Thread {
 		         message.setSubject("Magic Eye Camera Inactive");
 
 		         // Now set the actual message
-		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the inactivity of your Magic Eye camera" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY"+'\n'+"FOR ANY TYPE OF QUERY CONTACT : +91 8793587391");
+		         messageBodyPart.setText("Hello!" + '\n' + "This mail is sent to alert you for the inactivity of your Magic Eye camera" + '\n' + "Please take a look."+'\n'+'\n'+'\n'+"THIS IS A SYSTEM GENERATED MAIL. PLEASE DO NOT REPLY");
 
 		         // Set text message part
 		         multipart.addBodyPart(messageBodyPart);

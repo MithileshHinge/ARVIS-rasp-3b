@@ -49,7 +49,7 @@ public class SendingAudio extends Thread{
 			socket = new Socket(servername,PORT_AUDIO_TCP);
 			//dataSocket = new DatagramSocket(PORT_AUDIO_UDP);
 			dataSocket = new DatagramSocket();
-			dataSocket.setSoTimeout(500);
+			dataSocket.setSoTimeout(5000);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}

@@ -94,9 +94,12 @@ public class MessageThread extends Thread{
 					break;
 				case BYTE_STOP_ALARM:
 					System.out.println("#########################   Alarm off kela ");
-
-					AudioPlaying.clip.stop();
-					AudioPlaying.clip.close();
+					if(AudioPlaying.clip.isOpen() || AudioPlaying.clip.isActive())
+					{
+						AudioPlaying.clip.stop();
+						AudioPlaying.clip.close();
+					}
+					
 					break;
 				case BYTE_RESTART:
 					System.out.println("######### Program restart");
@@ -119,7 +122,7 @@ public class MessageThread extends Thread{
 
 				socket.getOutputStream().write(1);
 				socket.getOutputStream().flush();
-				System.out.println("###################   Message thread acknowledgment sent to server");
+				System.out.println("###################   Message thread acknowledgment sent to server for = "+p);
 
 				socket.close();
 			}catch (IOException e){
