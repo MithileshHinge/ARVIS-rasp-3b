@@ -1,6 +1,16 @@
+import java.awt.AlphaComposite;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,12 +18,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
@@ -143,11 +156,23 @@ public class NotificationThread extends Thread {
 			dataJson.put("NotifId", NotifId);
 			dataJson.put("HashId", Main.HASH_ID);
 			long dateTime = System.currentTimeMillis();
-			//long dateTimeLong = Long.parseLong(dateTimeStr);
 			dataJson.put("time", dateTime);
 			System.out.println("..........Prepared 1st notif json object for app");
 			System.out.println("FCM Token : " + fcm_token);
-			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){	
+			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){
+				File out = new File("/home/pi/arvis/arvis_original.jpg");
+				ImageIO.write(image, "jpg", out);
+				BufferedImage resizedFrame = resize(image,100,100);
+				
+				String frame = imgToBase64String(resizedFrame,"jpg");
+				//BufferedImage resizedFrame = scale(image,0.06);
+				//String frame = imgToBase64String(resizedFrame,"jpg");
+				File output = new File("/home/pi/arvis/arvis_100_100.jpg");
+				ImageIO.write(resizedFrame, "jpg", output);
+				double bytes = output.length();
+				double kilobytes = (bytes/1024);
+				System.out.println("@#@#@#@#@@#@#@#@#@#@#@ size of image to be sent in KB : " + kilobytes +" frame string length " + frame.length());
+				dataJson.put("Frame",frame);
 				dataJson.put("date",activityName);
 				System.out.println("..........Prepared 2nd notif json object for app");
 			}else if(p == Main.BYTE_MEMORY_ALERT){
@@ -215,5 +240,24 @@ public class NotificationThread extends Thread {
 			}
 		}*/
 		
+	}
+	
+	private static BufferedImage resize(BufferedImage img, int height, int width) {
+        Image tmp = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_BGR);
+        Graphics2D g2d = resized.createGraphics();
+        g2d.drawImage(tmp, 0, 0, null);
+        g2d.dispose();
+        return resized;
+    }
+	
+	public static String imgToBase64String(final BufferedImage img, final String formatName) {
+	    final ByteArrayOutputStream os = new ByteArrayOutputStream();
+	    try {
+	        ImageIO.write(img, formatName, Base64.getEncoder().wrap(os));
+	        return os.toString(StandardCharsets.ISO_8859_1.name());
+	    } catch (final IOException ioe) {
+	        throw new UncheckedIOException(ioe);
+	    }
 	}
 }

@@ -75,10 +75,9 @@ public class ConnectThread extends Thread{
 					}
 					int i;
 					while(true){
-					i = in.read();
-					System.out.println("go ahead and create message thread  int recvd is 0 or not" + i);
-					if( i == 0 | i == 3) break;
-		
+						i = in.read();
+						System.out.println("go ahead and create message thread  int recvd is 0 or not" + i);
+						if( i == 0 | i == 3) break;
 					}
 					if(i == 3)
 						continue;

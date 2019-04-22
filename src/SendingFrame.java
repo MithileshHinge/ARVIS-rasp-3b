@@ -52,9 +52,17 @@ public class SendingFrame extends Thread {
         		e.printStackTrace();
         		break;
         	}
-
-
+        	
         	long time2 = System.currentTimeMillis();
+        	if (time2 - time1 < 200){
+        		try {
+					Thread.sleep(time2 - time1);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+        	}
+
+        	
         	//System.out.println("sendingframe time = " + (time2 - time1));
         }
     }
