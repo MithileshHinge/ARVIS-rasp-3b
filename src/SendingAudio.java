@@ -1,6 +1,7 @@
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,132 +40,134 @@ public class SendingAudio extends Thread{
 	static InputStream in;
 	static DataLine.Info dataLineInfo;
 	static SourceDataLine sourceDataLine;
-	static DatagramSocket dataSocket;
+	static DatagramSocket udpSocket;
 	static boolean getout = false;
 	static boolean once = true;
+	
+	private static String mobIP;
+    private static int mobPort;
 	
 	public void run(){
 		System.out.println(String.format("Receiving Audio started"));
 		try {
 			socket = new Socket(servername,PORT_AUDIO_TCP);
-			//dataSocket = new DatagramSocket(PORT_AUDIO_UDP);
-			dataSocket = new DatagramSocket();
-			dataSocket.setSoTimeout(5000);
+			udpSocket = new DatagramSocket();
+			udpSocket.setSoTimeout(5000);
+			
+			out = socket.getOutputStream();
+			DataInputStream din = new DataInputStream(socket.getInputStream());
+        	DataOutputStream dout = new DataOutputStream(out);
+        	int serverUDPport = din.readInt();
+        	byte[] serverBuf = new byte[2];
+        	DatagramPacket serverPacket = new DatagramPacket(serverBuf, serverBuf.length, InetAddress.getByName(servername), serverUDPport);
+        	for (int i=0; i<10; i++){
+        		udpSocket.send(serverPacket);
+        	}
+        	
+        	dout.writeUTF(socket.getLocalAddress().getHostAddress());
+        	dout.writeInt(udpSocket.getLocalPort());
+        	dout.flush();
+        	
+        	mobIP = din.readUTF();
+        	mobPort = din.readInt();
+        	
+        	System.out.println("mobIP: " + mobIP);
+        	System.out.println("mobPort: " + mobPort);
 		} catch (IOException e1) {
 			e1.printStackTrace();
+			return;
 		}
-		
-		while (true) {
-			try {
-				System.out.println("................next iteration");
-				
-				//System.out.println(String.format("....................................................connection sapadla"));
-				out = socket.getOutputStream();
-				out.write(2);
-				out.flush();
-				DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
-				dout.writeInt(dataSocket.getLocalPort());
-				dout.flush();
-				System.out.println("!!!!!!!!!!!!!!!!!!! Local Port  " + dataSocket.getLocalPort());
-				in = socket.getInputStream();
-				int p=in.read();
-				System.out.println("sendingaudio in.read successful!!");
+		try {
+			System.out.println("................next iteration");
 			
-				if(p==1)
-				{
-					p = 0;
-					System.out.println(String.format(".................p=1 received"));
-					out.write(3);
-				}
-				else{
-					continue;
-				}
-				
-				// UDP hole punching
-				byte[] holePunchingBuf = new byte[256];
-				DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(servername), PORT_AUDIO_UDP);
-				for (int i=0; i<10; i++){
-					System.out.println("UDP Hole Punching...");
-					dataSocket.send(holePunchingPacket);
-				}
-
-				
-	            byte[] receiveData = new byte[4096];   ///1280
-	            // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)
-
-	            format = new AudioFormat(sampleRate, 16, 1, true, false);dataLineInfo = new DataLine.Info(SourceDataLine.class, format);
-	            sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
-	            sourceDataLine.open(format, 4096 * 100);    // Buffer size of 4096 * 60 bytes = 2048 * 60 samples = approx 3 second  
-	            sourceDataLine.start();
-	            FloatControl volumeControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
-	            volumeControl.setValue(6f);
-	            //System.out.println(String.format("here"));
-	            DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
-	            
-	            
-	            //ByteArrayInputStream baiss = new ByteArrayInputStream(receivePacket.getData());
-	            
-	            //final ArrayBlockingQueue<byte[]> audioQueue = new ArrayBlockingQueue<>(200);
-	            
-	           /* new Thread(new Runnable(){
-	            	public void run(){
-	            		while (true){
-	            		if (once){
-	            			if (audioQueue.size() > 80){
-		            			try {
-		            				once = false;
-		            				System.out.println("Playing audio packet.....");
-									toSpeaker(audioQueue.take());
-								} catch (InterruptedException e) {
-									e.printStackTrace();
-								}
-	            			}
-	            		}else {
+			out.write(2);
+			out.flush();
+			in = socket.getInputStream();
+			
+			// UDP hole punching to mobile
+			System.out.println("UDP Hole Punching...");
+			byte[] holePunchingBuf = new byte[2];
+			DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(mobIP), mobPort);
+			for (int i=0; i<10; i++){
+				udpSocket.send(holePunchingPacket);
+			}
+			
+	        byte[] receiveData = new byte[4096];   ///1280
+	        // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)
+	
+	        format = new AudioFormat(sampleRate, 16, 1, true, false);dataLineInfo = new DataLine.Info(SourceDataLine.class, format);
+	        sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
+	        sourceDataLine.open(format, 4096 * 100);    // Buffer size of 4096 * 60 bytes = 2048 * 60 samples = approx 3 second  
+	        sourceDataLine.start();
+	        FloatControl volumeControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
+	        volumeControl.setValue(6f);
+	        //System.out.println(String.format("here"));
+	        DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
+	        
+	        
+	        //ByteArrayInputStream baiss = new ByteArrayInputStream(receivePacket.getData());
+	        
+	        //final ArrayBlockingQueue<byte[]> audioQueue = new ArrayBlockingQueue<>(200);
+	        
+	       /* new Thread(new Runnable(){
+	        	public void run(){
+	        		while (true){
+	        		if (once){
+	        			if (audioQueue.size() > 80){
 	            			try {
+	            				once = false;
 	            				System.out.println("Playing audio packet.....");
 								toSpeaker(audioQueue.take());
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}
-	            		}
-	            	}
-	            	}
-	            }).start();*/
-	            
-	            
-	            //FileInputStream fin = new FileInputStream("/home/odroid/Desktop/recording.raw");
-	            
-	            // make initial buffer
-	            
-	            ByteArrayOutputStream initialBuf = new ByteArrayOutputStream();
-	            for (int i=0; i<6; i++){
-	            	try{
-	            		out.write(1);
-	            		out.flush();
-	            		System.out.println("....receiving packets.....");
-	            		dataSocket.receive(receivePacket);
-	            		System.out.println("....receiving packets for initial buffer.....");
-	            		//if (fin.read(receiveData) == -1) break;
-	            		
-	            		initialBuf.write(receivePacket.getData());
-	            	}catch (IOException e){
-	            		e.printStackTrace();
-	            		continue;
-	            	}
-	            }
-	            
-	            toSpeaker(initialBuf.toByteArray());
-	            
-	            initialBuf.close();
-	            while (true) {
-		            System.out.println(String.format("......................................into audio rx while loop"));
-		            try{
-	            	out.write(1);
-	                out.flush();
-	                
-	                //if(fin.read(receiveData) == -1) break;
-	                
-		            dataSocket.receive(receivePacket);
+	        			}
+	        		}else {
+	        			try {
+	        				System.out.println("Playing audio packet.....");
+							toSpeaker(audioQueue.take());
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+	        		}
+	        	}
+	        	}
+	        }).start();*/
+	        
+	        
+	        //FileInputStream fin = new FileInputStream("/home/odroid/Desktop/recording.raw");
+	        
+	        // make initial buffer
+	        
+	        ByteArrayOutputStream initialBuf = new ByteArrayOutputStream();
+	        for (int i=0; i<6; i++){
+	        	try{
+	        		out.write(1);
+	        		out.flush();
+	        		System.out.println("....receiving packets.....");
+	        		udpSocket.receive(receivePacket);
+	        		System.out.println("....receiving packets for initial buffer.....");
+	        		//if (fin.read(receiveData) == -1) break;
+	        		
+	        		initialBuf.write(receivePacket.getData());
+	        	}catch (IOException e){
+	        		e.printStackTrace();
+	        		continue;
+	        	}
+	        }
+	        
+	        toSpeaker(initialBuf.toByteArray());
+	        
+	        initialBuf.close();
+	        while (true) {
+	            System.out.println(String.format("......................................into audio rx while loop"));
+	            try{
+		        	out.write(1);
+		            out.flush();
+		            
+		            //if(fin.read(receiveData) == -1) break;
+		            
+		            udpSocket.receive(receivePacket);
 		            
 		            /*try {
 						//audioQueue.put(receivePacket.getData());
@@ -172,41 +175,38 @@ public class SendingAudio extends Thread{
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}*/
-	                
-	                //toSpeaker(receiveData);
+		            
+		            //toSpeaker(receiveData);
 		            
 		            toSpeaker(receivePacket.getData());			            
 		            System.out.println(String.format(".....here....................................................."));
-	                
-		            }catch (SocketTimeoutException s) {
-		                System.out.println("Socket timed out!");
-		                break;
-		            }catch (IOException e){
-		            	System.out.println("............Audio sending closed");
-		            	break;
-		            }
-	            }
 	            
-	            //fin.close();
-		       
 	            }catch (SocketTimeoutException s) {
-	                System.out.println(".......Socket timed out!");
-	                
-	             } 	 
-			     catch (IOException e) {
-					System.out.println(String.format("connection_prob2"));					
-					e.printStackTrace();
-					break;
-			     } catch (LineUnavailableException e) {
-					e.printStackTrace();
-				}
-			
-				once = true;
-			 
-			    sourceDataLine.drain();
-			    sourceDataLine.stop();
-	            sourceDataLine.close();
-	    }
+	                System.out.println("Socket timed out!");
+	                break;
+	            }catch (IOException e){
+	            	System.out.println("............Audio sending closed");
+	            	break;
+	            }
+	        }
+	        
+	        //fin.close();
+	       
+		} catch (SocketTimeoutException s) {
+        	System.out.println(".......Socket timed out!");
+        	s.printStackTrace();
+     	} catch (IOException e) {
+			System.out.println(String.format("connection_prob2"));					
+			e.printStackTrace();
+		} catch (LineUnavailableException e) {
+			e.printStackTrace();
+		}
+		
+		once = true;
+	 
+	    sourceDataLine.drain();
+	    sourceDataLine.stop();
+        sourceDataLine.close();
 	}
 	
 	public static void toSpeaker(byte soundbytes[]) {
