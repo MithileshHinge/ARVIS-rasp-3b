@@ -22,8 +22,8 @@ public class SendingFrame extends Thread {
     private static String servername=Main.servername;
     private static OutputStream out;
     
-    private static String mobIP;
-    private static int mobPort;
+    private static String mobUdpIP;
+    private static int mobUdpPort;
 
     public void run() {
     	
@@ -35,22 +35,14 @@ public class SendingFrame extends Thread {
         	
         	DataInputStream din = new DataInputStream(socket.getInputStream());
         	DataOutputStream dout = new DataOutputStream(out);
-        	int serverUDPport = din.readInt();
-        	byte[] serverBuf = new byte[2];
-        	DatagramPacket serverPacket = new DatagramPacket(serverBuf, serverBuf.length, InetAddress.getByName(servername), serverUDPport);
-        	for (int i=0; i<10; i++){
-        		udpSocket.send(serverPacket);
-        	}
-        	
-        	dout.writeUTF(socket.getLocalAddress().getHostAddress());
-        	dout.writeInt(udpSocket.getLocalPort());
+        	dout.writeUTF(Main.HASH_ID);
         	dout.flush();
         	
-        	mobIP = din.readUTF();
-        	mobPort = din.readInt();
+        	mobUdpPort = din.readInt();
+        	mobUdpIP = din.readUTF();
         	
-        	System.out.println("mobIP: " + mobIP);
-        	System.out.println("mobPort: " + mobPort);
+        	System.out.println("mobIP: " + mobUdpIP);
+        	System.out.println("mobPort: " + mobUdpPort);
         	
         } catch (IOException e1) {
             e1.printStackTrace();
@@ -69,10 +61,9 @@ public class SendingFrame extends Thread {
 	            byte[] buf = baos.toByteArray();
 	            System.out.println("buff size" + buf.length);
 	            
-	            InetAddress mobAddress = InetAddress.getByName(mobIP);
-	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, mobAddress, mobPort);
+	            InetAddress mobUdpAddress = InetAddress.getByName(mobUdpIP);
+	            DatagramPacket imgPacket = new DatagramPacket(buf, buf.length, mobUdpAddress, mobUdpPort);
 	            udpSocket.send(imgPacket);
-
         	} catch (IOException e) {
         		e.printStackTrace();
         		try {
