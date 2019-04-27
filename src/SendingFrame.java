@@ -36,8 +36,8 @@ public class SendingFrame extends Thread {
 	private static TargetDataLine targetDataLine;
 	private static AudioFormat format;
 	private static DataLine.Info dataLineInfo;
-	private static int sampleRate = 16000;
-	private static int listenMinBufSize = 4096;
+	private static int sampleRate = 8000;
+	private static int listenMinBufSize = 8184;
 	private static DatagramSocket listenDataSocket;
 	public volatile boolean createListenSocketOnce = true;
 	private static OutputStream listenOut;
@@ -155,9 +155,9 @@ public class SendingFrame extends Thread {
 			}
 
 			long time2 = System.currentTimeMillis();
-			if (time2 - time1 < 100){
+			if (time2 - time1 < 200){
 				try {
-					Thread.sleep(100 - (time2 - time1));
+					Thread.sleep(200 - (time2 - time1));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

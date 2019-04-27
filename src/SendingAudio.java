@@ -31,7 +31,7 @@ public class SendingAudio extends Thread{
 	static AudioFormat format;
 	
 	static int PORT_AUDIO_UDP = 6671;
-	static int sampleRate = 44100;                //44100;
+	static int sampleRate = 16000;                //44100;
 
 	static int PORT_AUDIO_TCP = 6670;
 	private static String servername = Main.ipv6 ;
@@ -101,7 +101,7 @@ public class SendingAudio extends Thread{
 	        
 	        initialBuf.close();
 	        while (true) {
-	            System.out.println(String.format("......................................into audio rx while loop"));
+	        	System.out.println(String.format("......................................into audio rx while loop"));
 	            try{
 		        	out.write(1);
 		            out.flush();
@@ -109,6 +109,7 @@ public class SendingAudio extends Thread{
 		            
 		            toSpeaker(receivePacket.getData());			            
 		            System.out.println(String.format(".....here....................................................."));
+		         
 	            
 	            }catch (SocketTimeoutException s) {
 	                System.out.println("Socket timed out!");
