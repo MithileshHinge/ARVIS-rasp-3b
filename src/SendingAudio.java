@@ -34,7 +34,7 @@ public class SendingAudio extends Thread{
 	static int sampleRate = 44100;                //44100;
 
 	static int PORT_AUDIO_TCP = 6670;
-	private static String servername = Main.servername ;
+	private static String servername = Main.ipv6 ;
 	static Socket socket;
 	static OutputStream out;
 	static InputStream in;
@@ -57,41 +57,17 @@ public class SendingAudio extends Thread{
 			out = socket.getOutputStream();
 			DataInputStream din = new DataInputStream(socket.getInputStream());
         	DataOutputStream dout = new DataOutputStream(out);
-        	int serverUDPport = din.readInt();
-        	byte[] serverBuf = new byte[2];
-        	DatagramPacket serverPacket = new DatagramPacket(serverBuf, serverBuf.length, InetAddress.getByName(servername), serverUDPport);
-        	for (int i=0; i<10; i++){
-        		udpSocket.send(serverPacket);
-        	}
         	
-        	dout.writeUTF(socket.getLocalAddress().getHostAddress());
+        	dout.writeUTF(Main.HASH_ID);
         	dout.writeInt(udpSocket.getLocalPort());
         	dout.flush();
         	
-        	mobIP = din.readUTF();
-        	mobPort = din.readInt();
-        	
-        	System.out.println("mobIP: " + mobIP);
-        	System.out.println("mobPort: " + mobPort);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			return;
 		}
 		try {
 			System.out.println("................next iteration");
-			
-			out.write(2);
-			out.flush();
-			in = socket.getInputStream();
-			
-			// UDP hole punching to mobile
-			System.out.println("UDP Hole Punching...");
-			byte[] holePunchingBuf = new byte[2];
-			DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(mobIP), mobPort);
-			for (int i=0; i<10; i++){
-				udpSocket.send(holePunchingPacket);
-			}
-			
 	        byte[] receiveData = new byte[4096];   ///1280
 	        // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)
 	
@@ -101,44 +77,9 @@ public class SendingAudio extends Thread{
 	        sourceDataLine.start();
 	        FloatControl volumeControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
 	        volumeControl.setValue(6f);
-	        //System.out.println(String.format("here"));
 	        DatagramPacket receivePacket = new DatagramPacket(receiveData,receiveData.length);
 	        
-	        
-	        //ByteArrayInputStream baiss = new ByteArrayInputStream(receivePacket.getData());
-	        
-	        //final ArrayBlockingQueue<byte[]> audioQueue = new ArrayBlockingQueue<>(200);
-	        
-	       /* new Thread(new Runnable(){
-	        	public void run(){
-	        		while (true){
-	        		if (once){
-	        			if (audioQueue.size() > 80){
-	            			try {
-	            				once = false;
-	            				System.out.println("Playing audio packet.....");
-								toSpeaker(audioQueue.take());
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-	        			}
-	        		}else {
-	        			try {
-	        				System.out.println("Playing audio packet.....");
-							toSpeaker(audioQueue.take());
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-	        		}
-	        	}
-	        	}
-	        }).start();*/
-	        
-	        
-	        //FileInputStream fin = new FileInputStream("/home/odroid/Desktop/recording.raw");
-	        
 	        // make initial buffer
-	        
 	        ByteArrayOutputStream initialBuf = new ByteArrayOutputStream();
 	        for (int i=0; i<6; i++){
 	        	try{
@@ -164,19 +105,7 @@ public class SendingAudio extends Thread{
 	            try{
 		        	out.write(1);
 		            out.flush();
-		            
-		            //if(fin.read(receiveData) == -1) break;
-		            
 		            udpSocket.receive(receivePacket);
-		            
-		            /*try {
-						//audioQueue.put(receivePacket.getData());
-		            	audioQueue.put(receiveData);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}*/
-		            
-		            //toSpeaker(receiveData);
 		            
 		            toSpeaker(receivePacket.getData());			            
 		            System.out.println(String.format(".....here....................................................."));
