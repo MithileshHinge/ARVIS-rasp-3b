@@ -56,9 +56,6 @@
 	<classpathentry kind="lib" path="firebase/slf4j-api-1.7.25.jar"/>
 	<classpathentry kind="lib" path="firebase/threetenbp-1.3.3.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/OpenCV-3.3.0"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/OpenCV 3.0.0"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/opencv-3.3.0"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/opencv_3.3.0"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

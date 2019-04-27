@@ -1,6 +1,17 @@
+import java.awt.AlphaComposite;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,18 +19,25 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -35,15 +53,16 @@ public class NotificationThread extends Thread {
 	public InputStream in_note;
 	public byte p;
 	public int myNotifId ;
-	public BufferedImage notifFrame;
+	public Mat notifFrame;
 	public static int memoryLeft;
 	
 	public static String fcm_token; //= "c-UYQcaz-aE:APA91bE5oeWOoSzMGggYLL7FfezyfK7Ed8-w0EUADWW5Uwlo_PjrAnXBVrUNEil146wrsxISlRrnDOoAicrI6l2is_uuz1uIBIgQ81DHz76CGx3gp8ZLG3HYsE4PgkYjQUiXL0_lAhnV";					//remove hard coded value
-	public static Boolean readyForNotifs = false;	// Turns true when FCM reg token of app is received!
-	public static Boolean sendNotif = false;	
+	public static boolean readyForNotifs = false;	// Turns true when FCM reg token of app is received!
+	public static boolean sendNotif = false;	
 	static String serverKey = "AIzaSyD5bIjH30FEMF2hmTrRzjRVGSU2NYFYJKg";
 	final static private String FCM_URL = "https://fcm.googleapis.com/fcm/send";
 	FileInputStream serviceAccount;
+	public static byte[] imgSent;
 
 	public NotificationThread() {
 		try {
@@ -115,7 +134,7 @@ public class NotificationThread extends Thread {
 			}
 		}
 	}
-	static void send_FCM_Notification(String tokenId, String server_key, int p, String activityName, int NotifId, BufferedImage image){
+	static void send_FCM_Notification(String tokenId, String server_key, int p, String activityName, int NotifId, Mat image){
 		try{
 			// Create URL instance.
 			URL url = new URL(FCM_URL);
@@ -143,13 +162,26 @@ public class NotificationThread extends Thread {
 			dataJson.put("NotifId", NotifId);
 			dataJson.put("HashId", Main.HASH_ID);
 			long dateTime = System.currentTimeMillis();
-			//long dateTimeLong = Long.parseLong(dateTimeStr);
 			dataJson.put("time", dateTime);
 			System.out.println("..........Prepared 1st notif json object for app");
 			System.out.println("FCM Token : " + fcm_token);
-			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){	
+			if (p == Main.BYTE_FACEFOUND_VDOGENERATED || p == Main.BYTE_ALERT2 || p == Main.BYTE_ABRUPT_END || p == Main.BYTE_LIGHT_CHANGE){
+				//Resize mat
+				Imgproc.resize(image, image, new Size(70,70));
+				
+				//convert to buffered image
+				BufferedImage resizedFrame = Main.matToBufferedImage(image);
+				
+				//convert to String
+				String frame = imgToBase64String(resizedFrame,"jpg");
+				
+				double bytes = frame.length();
+				double kilobytes = (bytes/1024);
+				System.out.println("@#@#@#@#@@#@#@#@#@#@#@ size of image to be sent in KB : " + kilobytes +" frame string length " + frame.length());
+				dataJson.put("Frame",frame);
 				dataJson.put("date",activityName);
 				System.out.println("..........Prepared 2nd notif json object for app");
+				
 			}else if(p == Main.BYTE_MEMORY_ALERT){
 				dataJson.put("%memory", memoryLeft);
 			}
@@ -215,5 +247,15 @@ public class NotificationThread extends Thread {
 			}
 		}*/
 		
+	}
+	
+	public static String imgToBase64String(final BufferedImage img, final String formatName) {
+		final ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try{
+		   ImageIO.write(img, formatName, os);
+		   return Base64.getEncoder().encodeToString(os.toByteArray());
+		} catch (final IOException ioe){
+		    throw new UncheckedIOException(ioe);
+		}
 	}
 }

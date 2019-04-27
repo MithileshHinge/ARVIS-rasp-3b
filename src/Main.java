@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.imageio.ImageIO;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -406,7 +408,6 @@ public class Main {
 
 			//Background subtraction without learning background
 			Mat fgMask = new Mat();
-			Mat frameRef = new Mat();
 
 			if (j) {
 				backgroundSubtractorMOG.apply(camImage, fgMask, -1);
@@ -431,6 +432,7 @@ public class Main {
 			BufferedImage cam_img = matToBufferedImage(camImage);
 			BufferedImage camimg = timestampIt(cam_img);
 			sendingFrame.frame = camimg;
+			notifThread.notifFrame = camImage;
 
 			//Get the number of contours
 			//int noOfContours = CalcContours(fgMask);
@@ -593,7 +595,7 @@ public class Main {
 
 							//If alert1 is not given, then start storing video4android | else, close the writer
 							if (!alert1given){
-								notifThread.notifFrame = camimg;
+								//notifThread.notifFrame = camimg;
 								notifThread.p = BYTE_FACEFOUND_VDOGENERATING;
 								notifThread.myNotifId = myNotifId;
 								System.out.println("value of notifId is " + myNotifId);
@@ -627,8 +629,7 @@ public class Main {
 				if (noFaceAlert && !alert1given && blackCountPercent<93 && (time4-time3)/1000 > 5 ){            //notifthrad dependent
 					alert1given = true;
 					System.out.println("warn level 1.......................");
-
-					notifThread.notifFrame = camimg;
+					//notifThread.notifFrame = camimg;
 					notifThread.p = BYTE_ALERT1;
 					notifThread.myNotifId = myNotifId;
 					notifThread.sendNotif = true;
@@ -732,7 +733,6 @@ public class Main {
 				}
 				
 				contoursCheck = 0;
-				frameRef = camImage;
 				//LightChange = false;
 
 				dNow = new Date();
