@@ -21,10 +21,12 @@ public class MessageThread extends Thread{
 			BYTE_START_LIVEFEED=2, 
 			BYTE_RESTART=11,
 			BYTE_START_AUDIO = 13,
-			BYTE_START_VIDEO_DOWNLOAD = 14;
-		
+			BYTE_START_VIDEO_DOWNLOAD = 14,
+			BYTE_START_LISTEN = 5,
+			BYTE_STOP_LISTEN = 6;
+
 	volatile boolean end = false;
-	
+
 	public MessageThread(){	}
 
 	public void run(){
@@ -58,7 +60,7 @@ public class MessageThread extends Thread{
 					Main.Surv_Mode=false;
 					Main.checkonce=true;
 					break;
-					
+
 				case BYTE_EMAIL_NOTIF_ON:
 					SendMail.sendmail = true;
 					System.out.println("......email notif turned ON.....");
@@ -79,14 +81,16 @@ public class MessageThread extends Thread{
 					Main.sendingFrame = new SendingFrame();
 					Main.sendingFrame.start();
 					break;
-					/*case BYTE_START_LISTEN:
+				case BYTE_START_LISTEN:
 					System.out.println("@@@@@@@@@@@@@@@@@Listen on kela.............................");
-					SendingFrame.listen = true;
+					Main.sendingFrame.listen = true;
 					break;
 				case BYTE_STOP_LISTEN:
 					System.out.println("@@@@@@@@@@@@@@@@@Listen off kela.............................");
-					SendingFrame.listen = false;
-					break;*/
+					Main.sendingFrame.listen = false;
+					Main.sendingFrame.createListenSocketOnce=true;
+					Main.sendingFrame.listenSocket.close();
+					break;
 				case BYTE_PLAY_ALARM:
 					System.out.println("#########################   Alarm on kela ");
 					audioPlaying1.play_alarm=true;
@@ -99,25 +103,25 @@ public class MessageThread extends Thread{
 						AudioPlaying.clip.stop();
 						AudioPlaying.clip.close();
 					}
-					
+
 					break;
 				case BYTE_RESTART:
 					System.out.println("######### Program restart");
-					
+
 					break;
-					
+
 				case BYTE_START_AUDIO :
 					System.out.println("################ Sending Audio ");
 					Main.sendingAudio = new SendingAudio();
 					Main.sendingAudio.start();
 					break;
-					
+
 				case BYTE_START_VIDEO_DOWNLOAD :
 					System.out.println("################ Video Download request ");
 					Main.sendingVideo = new SendingVideo();
 					Main.sendingVideo.start();
 					break;
-					
+
 				}
 
 				socket.getOutputStream().write(1);
@@ -131,7 +135,7 @@ public class MessageThread extends Thread{
 			}
 		}
 	}
-	
+
 	public void end(){
 		this.end = true;
 	}
