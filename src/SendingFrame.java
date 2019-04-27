@@ -19,7 +19,6 @@ public class SendingFrame extends Thread {
     private static DatagramSocket udpSocket;
     private static Socket socket;
     public static BufferedImage frame;
-    private static String servername=Main.servername;
     private static OutputStream out;
     
     private static String mobUdpIP;
@@ -29,7 +28,7 @@ public class SendingFrame extends Thread {
     	
 		System.out.println("!!!!!!!!!!! LIVEFEED STARTED  !!!!!!!!!!");
         try {
-        	socket = new Socket(servername,PORT_LIVEFEED_TCP);
+        	socket = new Socket(Main.ipv6,PORT_LIVEFEED_TCP);
         	udpSocket = new DatagramSocket();
         	out = socket.getOutputStream();
         	
