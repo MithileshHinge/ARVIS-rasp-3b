@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 //import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,6 +9,7 @@ import java.net.SocketTimeoutException;
 
 public class MessageThread extends Thread{
 
+	private static int volume=2;
 	private int port = 6676;
 	private Socket socket;
 	private String servername=Main.servername ;
@@ -24,7 +27,7 @@ public class MessageThread extends Thread{
 			BYTE_START_VIDEO_DOWNLOAD = 14,
 			BYTE_START_LISTEN = 5,
 			BYTE_STOP_LISTEN = 6;
-
+	final String[] volumeLevel = {"0", "75", "80", "86", "92", "100"};
 	volatile boolean end = false;
 
 	public MessageThread(){	}
@@ -120,6 +123,37 @@ public class MessageThread extends Thread{
 					System.out.println("################ Video Download request ");
 					Main.sendingVideo = new SendingVideo();
 					Main.sendingVideo.start();
+					break;
+				case 20: case 21: case 22: case 23: case 24: case 25:
+					System.out.println("################ Volume control request ");
+					volume = p - 20;
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							int retVal = 1;
+							System.out.println("changing speaker volume ");
+							while(retVal != 0){
+								try{
+									String volper = volumeLevel[volume];
+									System.out.println("volper: " + volper+"%");
+									String[] command = { "amixer", "-c","0","set","PCM","--", volper+"%" };
+									ProcessBuilder pb = new ProcessBuilder(command);
+									pb.redirectErrorStream(true);
+									Process proc = pb.start();
+									BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+									String line;
+									while ((line = reader.readLine()) != null)
+										System.out.println("amixer: " + line);
+									retVal = proc.waitFor();
+									System.out.println(retVal);
+									Thread.sleep(700);
+
+								}catch (InterruptedException | IOException e1){
+									e1.printStackTrace();
+								}
+							}	
+						}
+					}).start();
 					break;
 
 				}
