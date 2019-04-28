@@ -26,6 +26,14 @@ public class SendingFrame extends Thread {
         try {
         	socket = new Socket(servername,PORT_LIVEFEED_TCP);
             udpSocket = new DatagramSocket();
+            byte[] buf1 = Main.HASH_ID.getBytes();
+            System.out.println("hash id udp packet length is :" + buf1.length);
+			DatagramPacket packet = new DatagramPacket(buf1, buf1.length, InetAddress.getByName(servername), PORT_LIVEFEED_UDP);
+			for (int i=0; i<10; i++){
+				udpSocket.send(packet);
+			}
+			System.out.println("intial udp packets sent to server");
+
         } catch (IOException e1) {
             e1.printStackTrace();
             return;
