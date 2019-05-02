@@ -42,6 +42,7 @@ public class SendingAudio extends Thread{
 	static DatagramSocket dataSocket;
 	static boolean getout = false;
 	static boolean once = true;
+	public volatile boolean receivedAudioPacket = false;
 	
 	public void run(){
 		System.out.println(String.format("Receiving Audio started"));
@@ -62,9 +63,9 @@ public class SendingAudio extends Thread{
 				out = socket.getOutputStream();
 				out.write(2);
 				out.flush();
-				DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
+				/*DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
 				dout.writeInt(dataSocket.getLocalPort());
-				dout.flush();
+				dout.flush();*/
 				System.out.println("!!!!!!!!!!!!!!!!!!! Local Port  " + dataSocket.getLocalPort());
 				in = socket.getInputStream();
 				int p=in.read();
@@ -81,13 +82,25 @@ public class SendingAudio extends Thread{
 				}
 				
 				// UDP hole punching
-				byte[] holePunchingBuf = new byte[256];
-				DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(servername), PORT_AUDIO_UDP);
-				for (int i=0; i<10; i++){
-					System.out.println("UDP Hole Punching...");
-					dataSocket.send(holePunchingPacket);
-				}
-
+				/*
+				*/
+				new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						try{
+							byte[] holePunchingBuf = new byte[256];
+							DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(Main.servername), PORT_AUDIO_UDP);
+							while(!receivedAudioPacket){
+								System.out.println("UDP Hole Punching sending Audio...");
+								dataSocket.send(holePunchingPacket);
+								}
+						}catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+						}
+					}).start();
 				
 	            byte[] receiveData = new byte[4096];   ///1280
 	            // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)
@@ -143,6 +156,7 @@ public class SendingAudio extends Thread{
 	            		out.flush();
 	            		System.out.println("....receiving packets.....");
 	            		dataSocket.receive(receivePacket);
+	            		receivedAudioPacket = true;
 	            		System.out.println("....receiving packets for initial buffer.....");
 	            		//if (fin.read(receiveData) == -1) break;
 	            		
@@ -165,7 +179,7 @@ public class SendingAudio extends Thread{
 	                //if(fin.read(receiveData) == -1) break;
 	                
 		            dataSocket.receive(receivePacket);
-		            
+		            receivedAudioPacket = true;
 		            /*try {
 						//audioQueue.put(receivePacket.getData());
 		            	audioQueue.put(receiveData);
@@ -183,6 +197,7 @@ public class SendingAudio extends Thread{
 		                break;
 		            }catch (IOException e){
 		            	System.out.println("............Audio sending closed");
+		            	receivedAudioPacket = false;
 		            	break;
 		            }
 	            }
