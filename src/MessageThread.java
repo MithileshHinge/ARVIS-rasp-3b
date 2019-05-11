@@ -21,6 +21,7 @@ public class MessageThread extends Thread{
 			BYTE_PLAY_ALARM=7, 
 			BYTE_STOP_ALARM=8,
 			//BYTE_STOP_LIVEFEED = 4, 
+			BYTE_START_LISTEN = 5,
 			BYTE_START_LIVEFEED=2, 
 			BYTE_RESTART=11,
 			BYTE_START_AUDIO = 13,
@@ -90,6 +91,12 @@ public class MessageThread extends Thread{
 					System.out.println("@@@@@@@@@@@@@@@@@Listen off kela.............................");
 					SendingFrame.listen = false;
 					break;*/
+				case BYTE_START_LISTEN:
+					System.out.println("@@@@@@@@@@@@@@@@@Listen on kela..........................");
+					//SendingFrame sendingFrame = new SendingFrame();
+					Main.listen = new Listen();
+					Main.listen.start();
+					break;
 				case BYTE_PLAY_ALARM:
 					System.out.println("#########################   Alarm on kela ");
 					audioPlaying1.play_alarm=true;
