@@ -89,7 +89,7 @@ public class SendingAudio extends Thread{
 					@Override
 					public void run() {
 						try{
-							byte[] holePunchingBuf = new byte[256];
+							byte[] holePunchingBuf = Main.HASH_ID.getBytes();
 							DatagramPacket holePunchingPacket = new DatagramPacket(holePunchingBuf, holePunchingBuf.length, InetAddress.getByName(Main.servername), PORT_AUDIO_UDP);
 							while(!receivedAudioPacket){
 								System.out.println("UDP Hole Punching sending Audio...");
