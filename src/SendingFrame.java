@@ -6,7 +6,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
+import org.apache.http.impl.io.SocketOutputBuffer;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfInt;
@@ -53,14 +58,30 @@ public class SendingFrame extends Thread {
 	           	Mat frameInMat = Main.bufferedImageToMat(frame);
 	            Imgcodecs.imencode(".jpg", frameInMat, bufMat, compressParams);
 	           	byte[] buf = bufMat.toArray();
-	            System.out.println("buff size" + buf.length);
-	            dout.writeInt(buf.length);
+	           	
+	            /*dout.writeInt(buf.length);
+	            dout.flush();*/
+	            /*// Create buffer of length
+	            ByteBuffer lengthByteBuf = ByteBuffer.allocate(String.valueOf(buf.length).length());
+	            lengthByteBuf.putInt(buf.length);
+	            byte[] lengthBuf = lengthByteBuf.array();
+	            System.out.println("buff " + buf + " buff size" + buf.length + " lengthBuff " + lengthBuf + " lengthBuff size" + lengthBuf.length);
+	            
+	            // Creating final buffer
+	            byte[] finalBuf = new byte[lengthBuf.length + buf.length + 1];
+	            System.arraycopy(lengthBuf, 0, finalBuf, 0, lengthBuf.length);
+	            System.arraycopy(buf, 0, finalBuf, lengthBuf.length+1, buf.length);
+	            //finalBuf[lengthBuf.length] = (byte)'_';
+	            System.out.println("finalbuff " + finalBuf + " final buff size" + finalBuf.length);
+	            System.out.println("buf.toString() length = " + buf.toString().length() + " new String(buf) length = " + new String(buf).length());
+	            */
+	            
+	           	System.out.println("buf : " + buf + " buflength : "+buf.length);
+	           	String bufIntoString = new String(buf,StandardCharsets.ISO_8859_1);
+	            dout.writeUTF(bufIntoString);
 	            dout.flush();
-	            dout.write(buf);
-	            dout.flush();
-	            System.out.println("sending frame to server");
-
-        	} catch (IOException e) {
+	            System.out.println("SF : Frame sent");
+	       	} catch (IOException e) {
         		e.printStackTrace();
         		break;
         	}

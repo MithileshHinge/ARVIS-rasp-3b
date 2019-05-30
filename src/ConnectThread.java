@@ -144,20 +144,24 @@ public class ConnectThread extends Thread{
 			} catch (IOException e) {
 				//e.printStackTrace();
 				System.out.println("connect thread....sys disconnected");
-				msg.end();
 				try {
+					msg.end();
 					s.close();
 				} catch (IOException e1) {
 					//e1.printStackTrace();
 					System.out.println("connect thread....s not closing");
+				} catch(NullPointerException n){
+					n.printStackTrace();
 				}
 			} 
 		}
-		msg.end();
 		try {
+			msg.end();
 			s.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch(NullPointerException n){
+			n.printStackTrace();
 		}
 	}
 	
