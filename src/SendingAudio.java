@@ -54,7 +54,7 @@ public class SendingAudio extends Thread{
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		
+		receivedAudioPacket = false;
 		while (true) {
 			try {
 				System.out.println("................next iteration");
@@ -98,9 +98,9 @@ public class SendingAudio extends Thread{
 						}catch (IOException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
-								}
 						}
-					}).start();
+					}
+				}).start();
 				
 	            byte[] receiveData = new byte[4096];   ///1280
 	            // ( 1280 for 16 000Hz and 3584 for 44 100Hz (use AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) to get the correct size)

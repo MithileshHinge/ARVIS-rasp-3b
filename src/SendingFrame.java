@@ -2,16 +2,10 @@ import java.awt.image.BufferedImage;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
-import org.apache.http.impl.io.SocketOutputBuffer;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfInt;
@@ -19,28 +13,17 @@ import org.opencv.imgcodecs.Imgcodecs;
 
 public class SendingFrame extends Thread {
     private static int PORT_LIVEFEED_TCP = 6666;
-    private static DatagramSocket udpSocket;
     private static Socket socket;
     public static BufferedImage frame;
     private static String servername=Main.servername;
     private static OutputStream out;
     private static DataOutputStream dout;
-
-
+    
     public void run() {
     	
 		System.out.println("!!!!!!!!!!! LIVEFEED STARTED  !!!!!!!!!!");
         try {
         	socket = new Socket(servername,PORT_LIVEFEED_TCP);
-            /*udpSocket = new DatagramSocket();
-            byte[] buf1 = Main.HASH_ID.getBytes();
-            System.out.println("hash id udp packet length is :" + buf1.length);
-			DatagramPacket packet = new DatagramPacket(buf1, buf1.length, InetAddress.getByName(servername), PORT_LIVEFEED_UDP);
-			for (int i=0; i<10; i++){
-				udpSocket.send(packet);
-			}
-			System.out.println("intial udp packets sent to server");*/
-
         } catch (IOException e1) {
             e1.printStackTrace();
             return;
@@ -75,12 +58,10 @@ public class SendingFrame extends Thread {
 	            System.out.println("finalbuff " + finalBuf + " final buff size" + finalBuf.length);
 	            System.out.println("buf.toString() length = " + buf.toString().length() + " new String(buf) length = " + new String(buf).length());
 	            */
-	            
-	           	System.out.println("buf : " + buf + " buflength : "+buf.length);
 	           	String bufIntoString = new String(buf,StandardCharsets.ISO_8859_1);
 	            dout.writeUTF(bufIntoString);
 	            dout.flush();
-	            System.out.println("SF : Frame sent");
+	            System.out.println("SF : Frame sent ");
 	       	} catch (IOException e) {
         		e.printStackTrace();
         		break;
@@ -98,5 +79,11 @@ public class SendingFrame extends Thread {
         	
         	//System.out.println("sendingframe time = " + (time2 - time1));
         }
+        try {
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }

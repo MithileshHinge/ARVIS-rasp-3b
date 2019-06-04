@@ -240,11 +240,14 @@ public class Main {
 
 		Graphics2D g2 = dest.createGraphics();
 		//Color darkgreen= new Color(28,89,71);
-		Color darkgreen= new Color(255,255,255);
+		Color fgColor= new Color(255,255,255);
+		Color bgColor= new Color(0,0,0);
 		g2.drawImage(toEdit, 0, 0, toEdit.getWidth(), toEdit.getHeight(), null);
-		g2.setColor(darkgreen);
+		g2.setColor(fgColor);
+		g2.setBackground(bgColor);
 		g2.setFont(new Font("TimesRoman", Font.PLAIN, 25)); 
-
+		g2.drawRect(350, 450, dateTime.length(), 10);
+		g2.fillRect(350, 450, dateTime.length(), 10);
 		g2.drawString(dateTime, 350, 450);
 		return dest;
 	}
